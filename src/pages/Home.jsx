@@ -16,8 +16,34 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-[#fdfbf7] font-sans overflow-x-hidden relative">
       
-      {/* ================= ANIMACIONES SAFARI CONTINUAS ================= */}
       <style>{`
+        /* ================= ANIMACIÓN DE ENTRADA (NUEVO) ================= */
+        @keyframes scale-in {
+          0% { opacity: 0; transform: scale(0.95) translateY(30px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-scale-in {
+          animation: scale-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Efecto de entrada "Reveal" con desplazamiento y fade */
+        @keyframes reveal {
+          0% { opacity: 0; transform: translateY(40px) scale(0.9); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-reveal {
+          animation: reveal 3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          opacity: 0; /* Empieza invisible */
+        }
+
+        /* Clases de retraso para el efecto cascada */
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+        .delay-500 { animation-delay: 500ms; }
+        .delay-600 { animation-delay: 600ms; }
+
         @keyframes float-continuous {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-15px); }
@@ -33,7 +59,7 @@ const Home = () => {
         }
         .animate-swing {
           transform-origin: top center;
-          animation: swing 5s ease-in-out infinite;
+          animation: swing 1.5s ease-in-out infinite;
         }
       `}</style>
 
@@ -52,11 +78,11 @@ const Home = () => {
       </div>
 
       {/* ================= HERO SECTION (ARRIBA) ================= */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 relative z-10 animate-scale-in">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
-          {/* LADO IZQUIERDO: Textos Divertidos */}
-          <div className="space-y-8 relative z-20 bg-white/40 backdrop-blur-sm p-6 rounded-3xl border-2 border-white lg:bg-transparent lg:backdrop-blur-none lg:p-0 lg:border-none">
+          {/* LADO IZQUIERDO: Textos Divertidos con entrada en cascada */}
+          <div className="space-y-8 relative z-20 bg-white/40 backdrop-blur-sm p-6 rounded-3xl border-2 border-white lg:bg-transparent lg:backdrop-blur-none lg:p-0 lg:border-none animate-reveal delay-100">
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#f4a261] text-white font-black text-sm tracking-widest uppercase shadow-lg transform -rotate-2 hover:rotate-0 transition-transform cursor-default">
               <span className="text-xl animate-spin-slow">🧭</span> ¡Odontopediatría de Aventura!
             </div>
@@ -80,39 +106,42 @@ const Home = () => {
             </div>
           </div>
 
-          {/* LADO DERECHO: Collage con Fotos Grandes y Visibles */}
+          {/* LADO DERECHO: Collage con Fotos Grandes y Animación en cascada */}
           <div className="relative w-full h-[550px] sm:h-[650px] lg:h-[700px] mt-10 lg:mt-0">
             
-            {/* Foto 1 - Atrás Izquierda (Más grande: 42%) */}
-            <div className="absolute top-[0%] left-[0%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform -rotate-6 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-10 border border-gray-200">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#ffb3ba] opacity-90 rotate-3"></div>
-              <img src={paty1} alt="Aventura 1" className="w-full h-auto aspect-[4/3] object-cover rounded-lg" />
+           {/* Foto 1 - Atrás Izquierda */}
+            <div className="absolute top-[0%] left-[0%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform -rotate-6 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-10 border border-gray-200 animate-reveal delay-200">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/8 w-12 h-6 bg-[#ffb3ba] opacity-90 rotate-3"></div>
+              {/* CORRECCIÓN: Usamos object-[center_80%] (o object-bottom) en lugar de object-top */}
+              <img src={paty1} alt="Aventura 1" className="w-full h-auto aspect-[4/3] object-cover object-[center_20%] rounded-lg" />
             </div>
 
-            {/* Foto 2 - Atrás Derecha (Más grande: 42%) */}
-            <div className="absolute top-[5%] right-[0%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform rotate-6 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-20 border border-gray-200">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#baffc9] opacity-90 -rotate-3"></div>
-              <img src={paty2} alt="Aventura 2" className="w-full h-auto aspect-[4/3] object-cover rounded-lg" />
+            {/* Foto 2 - Atrás Derecha */}
+            <div className="absolute top-[5%] right-[0%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform rotate-6 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-20 border border-gray-200 animate-reveal delay-300">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/8 w-12 h-6 bg-[#baffc9] opacity-90 -rotate-3"></div>
+              <img src={paty2} alt="Aventura 2" className="w-full h-auto aspect-[4/3] object-cover object-top rounded-lg" />
             </div>
 
-            {/* Foto 3 - Abajo Izquierda (Más grande: 42%) */}
-            <div className="absolute bottom-[5%] left-[2%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform rotate-3 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-30 border border-gray-200">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#bae1ff] opacity-90 rotate-2"></div>
+            {/* Foto 3 - Abajo Izquierda */}
+            <div className="absolute bottom-[5%] left-[2%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform rotate-3 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-30 border border-gray-200 animate-reveal delay-400">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/8 w-12 h-6 bg-[#bae1ff] opacity-90 rotate-2"></div>
               <img src={paty3} alt="Aventura 3" className="w-full h-auto aspect-[4/3] object-cover rounded-lg" />
             </div>
 
-            {/* Foto 4 - Abajo Derecha (Más grande: 42%) */}
-            <div className="absolute bottom-[5%] right-[2%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform -rotate-6 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-40 border border-gray-200">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#ffffba] opacity-90 -rotate-2"></div>
+            {/* Foto 4 - Abajo Derecha */}
+            <div className="absolute bottom-[5%] right-[2%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform -rotate-6 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-10 border border-gray-200 animate-reveal delay-500">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/8 w-12 h-6 bg-[#ffffba] opacity-90 -rotate-2"></div>
               <img src={paty4} alt="Aventura 4" className="w-full h-auto aspect-[4/3] object-cover rounded-lg" />
             </div>
 
-            {/* Foto 5 - CENTRO EXACTO (Grande (52%) y con animación flotante continua garantizada) */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[52%] z-50 animate-float-continuous">
-              <div className="bg-white p-4 pb-16 shadow-[0_25px_60px_rgba(244,162,97,0.4)] rounded-2xl transform rotate-1 hover:rotate-0 hover:scale-105 transition-all duration-300 border-4 border-[#f4a261] cursor-pointer relative">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-16 h-8 bg-[#f4a261] opacity-90 -rotate-1 shadow-sm"></div>
-                <img src={paty5} alt="Aventura Principal" className="w-full h-auto aspect-[4/3] object-cover rounded-xl" />
-                <p className="absolute bottom-3 left-0 w-full text-center font-black text-[#6b584a] text-lg sm:text-xl font-handwriting">¡Cero Lágrimas! 💙</p>
+            {/* Foto 5 - CENTRO EXACTO (Wrapper doble para Animación) */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[52%] z-50 animate-reveal delay-600">
+              <div className="animate-float-continuous w-full h-full">
+                <div className="bg-white p-4 pb-16 shadow-[0_25px_60px_rgba(244,162,97,0.4)] rounded-2xl transform rotate-1 hover:rotate-0 hover:scale-105 transition-all duration-300 border-4 border-[#f4a261] cursor-pointer relative">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-16 h-8 bg-[#f4a261] opacity-90 -rotate-1 shadow-sm"></div>
+                  <img src={paty5} alt="Aventura Principal" className="w-full h-auto aspect-[4/3] object-cover object-top rounded-xl" />
+                  <p className="absolute bottom-3 left-0 w-full text-center font-black text-[#6b584a] text-lg sm:text-xl font-handwriting">¡Cero Lágrimas! 💙</p>
+                </div>
               </div>
             </div>
 
@@ -223,49 +252,46 @@ const Home = () => {
               </div>
             </div>
 
-            {/* COLLAGE GIGANTE (Derecha) - Fotos 6 a 10 Grandes y Visibles */}
+            {/* COLLAGE GIGANTE (Derecha) */}
+            {/* CORREGIDO EL TYPO: lg:h-[750px] en lugar de 750yoyopx */}
             <div className="lg:col-span-7 relative w-full h-[550px] sm:h-[650px] lg:h-[750px]">
               
-              {/* Foto 6 */}
               <div className="absolute top-[0%] left-[0%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform -rotate-3 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-10 border border-gray-200">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#ffdfba] opacity-90 rotate-2"></div>
-                <img src={paty6} alt="Cuidado dental" className="w-full h-auto aspect-[4/3] object-cover rounded-lg" />
+                <img src={paty6} alt="Cuidado dental" className="w-full h-auto aspect-[4/3] object-cover object-top rounded-lg" />
               </div>
 
-              {/* Foto 7 */}
               <div className="absolute top-[0%] right-[0%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform rotate-6 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-20 border border-gray-200">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#eaf4ed] opacity-90 -rotate-3"></div>
-                <img src={paty7} alt="Doctora y niños" className="w-full h-auto aspect-[4/3] object-cover rounded-lg" />
+                <img src={paty7} alt="Doctora y niños" className="w-full h-auto aspect-[4/3] object-cover object-top rounded-lg" />
               </div>
 
-              {/* Foto 8 */}
               <div className="absolute bottom-[0%] left-[2%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform rotate-3 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-30 border border-gray-200">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#f4f9f5] opacity-90 rotate-4"></div>
                 <img src={paty8} alt="Niño jugando" className="w-full h-auto aspect-[4/3] object-cover rounded-lg" />
               </div>
 
-              {/* Foto 9 */}
               <div className="absolute bottom-[0%] right-[2%] w-[42%] bg-white p-3 pb-12 shadow-xl rounded-xl transform -rotate-6 hover:rotate-0 hover:scale-110 hover:z-[60] transition-all duration-300 z-40 border border-gray-200">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-6 bg-[#fff5ea] opacity-90 -rotate-2"></div>
-                <img src={paty9} alt="Tratamiento feliz" className="w-full h-auto aspect-[4/3] object-cover rounded-lg" />
+                <img src={paty9} alt="Tratamiento feliz" className="w-full h-auto aspect-[4/3] object-cover object-top rounded-lg" />
                 <div className="absolute -bottom-6 -right-6 text-6xl animate-bounce">🐊</div>
               </div>
 
-              {/* Foto 10 - CENTRO ANIMADO GRANDE */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[52%] z-50 animate-float-continuous" style={{animationDelay: '1s'}}>
-                <div className="bg-white p-4 pb-16 shadow-[0_25px_60px_rgba(244,162,97,0.4)] rounded-2xl border-4 border-sonriendo-yellow transform -rotate-2 hover:rotate-0 hover:scale-105 transition-all duration-300 cursor-pointer relative">
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-16 h-8 bg-sonriendo-yellow opacity-90 rotate-1 shadow-sm"></div>
-                  <img src={paty10} alt="Centro de diversión" className="w-full h-auto aspect-[4/3] object-cover rounded-xl" />
-                  
-                  <div className="absolute -top-6 -left-6 sm:-top-8 sm:-left-8 text-5xl sm:text-6xl animate-swing origin-top-right">🐒</div>
-                  <div className="absolute -bottom-4 sm:-bottom-5 left-1/2 -translate-x-1/2 bg-white px-4 py-2 sm:px-6 rounded-full border-4 border-sonriendo-yellow shadow-lg font-black text-[#6b584a] whitespace-nowrap text-xs sm:text-base">
-                    ¡Diversión Asegurada! ⭐
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[52%] z-50">
+                <div className="animate-float-continuous w-full h-full" style={{animationDelay: '1s'}}>
+                  <div className="bg-white p-4 pb-16 shadow-[0_25px_60px_rgba(244,162,97,0.4)] rounded-2xl border-4 border-sonriendo-yellow transform -rotate-2 hover:rotate-0 hover:scale-105 transition-all duration-300 cursor-pointer relative">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-16 h-8 bg-sonriendo-yellow opacity-90 rotate-1 shadow-sm"></div>
+                    <img src={paty10} alt="Centro de diversión" className="w-full h-auto aspect-[4/3] object-cover object-top rounded-xl" />
+                    
+                    <div className="absolute -top-6 -left-6 sm:-top-8 sm:-left-8 text-5xl sm:text-6xl animate-swing origin-top-right">🐒</div>
+                    <div className="absolute -bottom-4 sm:-bottom-5 left-1/2 -translate-x-1/2 bg-white px-4 py-2 sm:px-6 rounded-full border-4 border-sonriendo-yellow shadow-lg font-black text-[#6b584a] whitespace-nowrap text-xs sm:text-base">
+                      ¡Diversión Asegurada! ⭐
+                    </div>
                   </div>
                 </div>
               </div>
 
             </div>
-
           </div>
         </div>
       </div>

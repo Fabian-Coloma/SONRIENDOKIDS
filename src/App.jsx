@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { supabase } from './supabase';
 
-// Componentes Comunes
+
+// ================= COMPONENTES COMUNES =================
+import ScrollToTop from "./components/Common/ScrollToTop";
 import Navbar from './components/Common/Navbar';
 import Footer from './components/Common/Footer';
-
-// Páginas Públicas
+import Referencias from './pages/Referencias';
+// ================= PÁGINAS PÚBLICAS =================
 import Home from './pages/Home';
 import Profesional from './pages/Profesional';
 import Sedes from './pages/Sedes';
@@ -14,12 +16,12 @@ import Ubicanos from './pages/Ubicanos';
 import Reserva from './pages/Reserva';
 import Login from './pages/Login';
 
-// Nuestras Nuevas Páginas de Especialidades
+// ================= PÁGINAS DE ESPECIALIDADES =================
 import Ortodoncia from './pages/Ortodoncia';
 import Odontopediatria from './pages/Odontopediatria';
 import Sedacion from './pages/Sedacion';
 
-// Páginas de Administración
+// ================= PÁGINAS DE ADMINISTRACIÓN =================
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminResumen from './pages/admin/AdminResumen';
 import AdminPacientes from './pages/admin/AdminPacientes';
@@ -27,6 +29,7 @@ import AdminHistorial from './pages/admin/AdminHistorial';
 import AdminFinanzas from './pages/admin/AdminFinanzas'; 
 import AdminCitas from './pages/admin/AdminCitas';
 
+// ================= PROTECCIÓN DE RUTAS (ADMIN) =================
 const ProtectedRoute = () => {
   const [autenticado, setAutenticado] = useState(null);
 
@@ -47,7 +50,10 @@ const ProtectedRoute = () => {
   if (autenticado === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F7FE]">
-        <p className="text-gray-500 font-medium">Verificando seguridad...</p>
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <span className="text-4xl">🦷</span>
+          <p className="text-gray-500 font-bold tracking-widest uppercase">Verificando seguridad...</p>
+        </div>
       </div>
     );
   }
@@ -55,12 +61,10 @@ const ProtectedRoute = () => {
   return autenticado ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
-// Layout Público: Aplica Navbar y Footer a todas las rutas hijas
+// ================= LAYOUT PÚBLICO (Navbar + Footer) =================
 const PublicLayout = () => (
   <div className="flex flex-col min-h-screen">
     <Navbar />
-    {/* Ajuste menor: Quité 'pt-24' y puse 'flex-grow' para evitar que se 
-        sume al 'pt-40' que ya le dimos individualmente a las nuevas páginas */}
     <main className="flex-grow">
       <Outlet />
     </main>
@@ -68,9 +72,13 @@ const PublicLayout = () => (
   </div>
 );
 
+// ================= APLICACIÓN PRINCIPAL =================
 function App() {
   return (
     <BrowserRouter>
+      {/* MAGIA AQUÍ: Este componente invisible se encarga de subir el scroll al tope cada vez que cambias de página */}
+      <ScrollToTop />
+      
       <Routes>
         
         {/* RUTAS PÚBLICAS (Usan Navbar y Footer) */}
@@ -81,6 +89,7 @@ function App() {
           <Route path="/ubicanos" element={<Ubicanos />} />
           <Route path="/reserva" element={<Reserva />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/testimonios" element={<Referencias />} />
           
           {/* Rutas de las Especialidades */}
           <Route path="/ortodoncia" element={<Ortodoncia />} />
