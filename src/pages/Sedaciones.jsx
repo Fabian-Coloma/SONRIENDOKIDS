@@ -114,10 +114,10 @@ const Sedaciones = () => {
               
               <div className="space-y-4">
                 <p className="text-gray-600 text-lg leading-relaxed font-medium">
-                  🌿 <strong className="text-[#4a6b53]">Sedación consciente:</strong> el niño permanece despierto, tranquilo y colaborador, ayudando a que su experiencia dental sea más cómoda.
+                  🌿 <strong className="text-[#2f944c]">Sedación consciente:</strong> el niño permanece despierto, tranquilo y colaborador, ayudando a que su experiencia dental sea más cómoda.
                 </p>
                 <p className="text-gray-600 text-lg leading-relaxed font-medium">
-                  💤 <strong className="text-[#a67b5b]">Sedación intermedia con anestesiología:</strong> indicada en casos de mayor ansiedad o tratamientos más complejos. El niño permanece dormido y respira por sí mismo, bajo la supervisión y monitorización del médico anestesiólogo.
+                  💤 <strong className="text-[#c2783f]">Sedación intermedia con anestesiología:</strong> indicada en casos de mayor ansiedad o tratamientos más complejos. El niño permanece dormido y respira por sí mismo, bajo la supervisión y monitorización del médico anestesiólogo.
                 </p>
               </div>
             </div>

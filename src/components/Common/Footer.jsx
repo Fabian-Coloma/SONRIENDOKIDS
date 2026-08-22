@@ -18,15 +18,16 @@ const Footer = () => {
         🐒
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 mt-4">
+      {/* Se cambió a max-w-6xl para mantener el footer más unido y compacto en pantallas grandes */}
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 relative z-10 mt-4">
         
         {/* ================= CONTENIDO PRINCIPAL DEL FOOTER ================= */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-6 mb-8">
+        {/* Volvemos a grid-cols-12 para dar proporciones asimétricas perfectas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-6 xl:gap-8 mb-8">
           
-          {/* COLUMNA 1: Marca y Redes */}
+          {/* COLUMNA 1: Marca y Redes (Ocupa 4 de 12) */}
           <div className="lg:col-span-4 flex flex-col justify-start">
             
-            {/* Contenedor que recorta forzosamente los espacios vacíos de la imagen */}
             <Link to="/" className="inline-block group relative z-20 w-64 md:w-72 lg:w-80 h-24 md:h-28 overflow-hidden mb-6 -ml-2">
               <img 
                 src={logoSonriendo} 
@@ -39,7 +40,6 @@ const Footer = () => {
               Transformamos la visita al dentista en una expedición mágica. Especialistas en hacer sonreír a los más pequeños del Callao.
             </p>
             
-            {/* Redes Sociales Pro */}
             <div className="flex gap-3 relative z-20 pl-2">
               <a 
                 href="https://instagram.com/pat.odontopediatra" 
@@ -71,9 +71,9 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* COLUMNA 2: Enlaces Rápidos */}
+          {/* COLUMNA 2: Enlaces Rápidos (Ocupa 2 de 12) */}
           <div className="lg:col-span-2 mt-4 lg:mt-0">
-            <h3 className="text-lg font-bold text-white mb-4 border-b-2 border-[#4a6b53] pb-1 inline-block">Rutas de Expedición</h3>
+            <h3 className="text-lg font-bold text-white mb-4 border-b-2 border-[#4a6b53] pb-1 inline-block whitespace-nowrap">Rutas de Expedición</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link to="/" className="text-[#eaf4ed]/80 hover:text-[#f4a261] font-medium flex items-center gap-2 group transition-colors">
@@ -86,7 +86,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/ortodoncia" className="text-[#eaf4ed]/80 hover:text-[#f4a261] font-medium flex items-center gap-2 group transition-colors">
+                <Link to="/ortopedia-ortodoncia" className="text-[#eaf4ed]/80 hover:text-[#f4a261] font-medium flex items-center gap-2 group transition-colors">
                   <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-xs">🐾</span> Ortopedia y Ortodoncia
                 </Link>
               </li>
@@ -96,7 +96,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/sedacion" className="text-[#eaf4ed]/80 hover:text-[#f4a261] font-medium flex items-center gap-2 group transition-colors">
+                <Link to="/sedaciones" className="text-[#eaf4ed]/80 hover:text-[#f4a261] font-medium flex items-center gap-2 group transition-colors">
                   <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-xs">🐾</span> Sedaciones
                 </Link>
               </li>
@@ -108,9 +108,9 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* COLUMNA 3: Base de Contacto */}
+          {/* COLUMNA 3: Base de Contacto (Ocupa 3 de 12) */}
           <div className="lg:col-span-3 space-y-4 mt-4 lg:mt-0">
-            <h3 className="text-lg font-bold text-white mb-4 border-b-2 border-[#4a6b53] pb-1 inline-block">Base de Contacto</h3>
+            <h3 className="text-lg font-bold text-white mb-4 border-b-2 border-[#4a6b53] pb-1 inline-block whitespace-nowrap">Base de Contacto</h3>
             
             <div className="flex items-center gap-3 group">
               <div className="w-8 h-8 rounded-full bg-[#3a5441] flex items-center justify-center text-sm shrink-0 group-hover:scale-110 group-hover:bg-[#f4a261] transition-all">📍</div>
@@ -137,10 +137,11 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* COLUMNA 4: Horarios */}
+          {/* COLUMNA 4: Horarios (Ocupa 3 de 12) */}
           <div className="lg:col-span-3 mt-4 lg:mt-0">
-            <h3 className="text-lg font-bold text-white mb-4 border-b-2 border-[#4a6b53] pb-1 inline-block">Horarios del Safari</h3>
-            <div className="bg-[#3a5441]/50 p-4 rounded-xl border border-[#4a6b53] space-y-3">
+            <h3 className="text-lg font-bold text-white mb-4 border-b-2 border-[#4a6b53] pb-1 inline-block whitespace-nowrap">Horarios del Safari</h3>
+            
+            <div className="bg-[#3a5441]/50 p-4 rounded-xl border border-[#4a6b53] space-y-3 w-full max-w-[230px]">
               
               <div className="flex justify-between items-center border-b border-[#4a6b53] pb-2">
                 <span className="text-[#eaf4ed] text-sm font-medium">Lun a Vie</span>
