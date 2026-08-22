@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
+import logoSonriendo from '../../assets/LOGOTIPO SIN FONDO SONRIENDO DENTAL KIDS_Mesa de trabajo 1 copia.png';
 
 const Footer = () => {
-  // Redujimos drásticamente el padding superior (pt-12) e inferior (pb-6) para hacerlo más delgado
   return (
     <footer className="bg-[#2d3b32] text-[#fdfbf7] relative overflow-hidden border-t-[10px] border-dashed border-[#f4a261] pt-12 pb-6 z-10 font-sans">
       
@@ -13,7 +13,7 @@ const Footer = () => {
         <div className="absolute top-[50%] left-[30%] text-[6rem] transform -rotate-12">🍃</div>
       </div>
 
-      {/* Monito colgado del borde superior (Un poco más pequeño para adaptarse al nuevo alto) */}
+      {/* Monito colgado del borde superior */}
       <div className="absolute -top-1 left-[10%] lg:left-[20%] text-4xl origin-top animate-swing cursor-default">
         🐒
       </div>
@@ -23,20 +23,24 @@ const Footer = () => {
         {/* ================= CONTENIDO PRINCIPAL DEL FOOTER ================= */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-6 mb-8">
           
-          {/* COLUMNA 1: Marca y Redes (Ocupa 4 columnas) */}
-          <div className="lg:col-span-4 space-y-4">
-            <Link to="/" className="inline-block group">
-              <h2 className="text-3xl font-black text-white flex items-center gap-2">
-                Sonriendo<span className="text-[#f4a261]">Kids</span>
-                <span className="group-hover:animate-bounce transition-transform">🦁</span>
-              </h2>
+          {/* COLUMNA 1: Marca y Redes */}
+          <div className="lg:col-span-4 flex flex-col justify-start">
+            
+            {/* Contenedor que recorta forzosamente los espacios vacíos de la imagen */}
+            <Link to="/" className="inline-block group relative z-20 w-64 md:w-72 lg:w-80 h-24 md:h-28 overflow-hidden mb-6 -ml-2">
+              <img 
+                src={logoSonriendo} 
+                alt="Logotipo Sonriendo Dental Kids" 
+                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+              />
             </Link>
-            <p className="text-[#eaf4ed]/80 text-sm font-medium leading-relaxed max-w-sm">
+
+            <p className="text-[#eaf4ed]/80 text-sm font-medium leading-relaxed max-w-sm mb-5 relative z-20 pl-2">
               Transformamos la visita al dentista en una expedición mágica. Especialistas en hacer sonreír a los más pequeños del Callao.
             </p>
             
-            {/* Redes Sociales Pro (Iconos un poco más compactos) */}
-            <div className="flex gap-3 pt-1">
+            {/* Redes Sociales Pro */}
+            <div className="flex gap-3 relative z-20 pl-2">
               <a 
                 href="https://instagram.com/pat.odontopediatra" 
                 target="_blank" 
@@ -56,7 +60,7 @@ const Footer = () => {
                 <svg className="w-4 h-4 group-hover:animate-pulse" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.28 6.28 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z" /></svg>
               </a>
               <a 
-                href="https://wa.me/51988988812" 
+                href="https://wa.me/51904104511" 
                 target="_blank" 
                 rel="noreferrer"
                 className="w-10 h-10 rounded-full bg-[#3a5441] flex items-center justify-center text-white hover:bg-[#25D366] hover:scale-110 hover:-translate-y-1 transition-all duration-300 shadow-lg group"
@@ -67,8 +71,8 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* COLUMNA 2: Enlaces Rápidos (Comprimidos) */}
-          <div className="lg:col-span-2">
+          {/* COLUMNA 2: Enlaces Rápidos */}
+          <div className="lg:col-span-2 mt-4 lg:mt-0">
             <h3 className="text-lg font-bold text-white mb-4 border-b-2 border-[#4a6b53] pb-1 inline-block">Rutas de Expedición</h3>
             <ul className="space-y-2 text-sm">
               <li>
@@ -83,7 +87,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/ortodoncia" className="text-[#eaf4ed]/80 hover:text-[#f4a261] font-medium flex items-center gap-2 group transition-colors">
-                  <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-xs">🐾</span> Ortodoncia Fija
+                  <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-xs">🐾</span> Ortopedia y Ortodoncia
                 </Link>
               </li>
               <li>
@@ -93,7 +97,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/sedacion" className="text-[#eaf4ed]/80 hover:text-[#f4a261] font-medium flex items-center gap-2 group transition-colors">
-                  <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-xs">🐾</span> Sedación Consciente
+                  <span className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-xs">🐾</span> Sedaciones
                 </Link>
               </li>
               <li>
@@ -104,8 +108,8 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* COLUMNA 3: Base de Contacto (Comprimida) */}
-          <div className="lg:col-span-3 space-y-4">
+          {/* COLUMNA 3: Base de Contacto */}
+          <div className="lg:col-span-3 space-y-4 mt-4 lg:mt-0">
             <h3 className="text-lg font-bold text-white mb-4 border-b-2 border-[#4a6b53] pb-1 inline-block">Base de Contacto</h3>
             
             <div className="flex items-center gap-3 group">
@@ -120,7 +124,7 @@ const Footer = () => {
               <div className="w-8 h-8 rounded-full bg-[#3a5441] flex items-center justify-center text-sm shrink-0 group-hover:scale-110 group-hover:bg-[#f4a261] transition-all">📞</div>
               <div>
                 <p className="font-bold text-white text-sm leading-tight">Llámanos</p>
-                <p className="text-[#eaf4ed]/70 text-xs hover:text-white transition-colors cursor-pointer">+51 988 988 812</p>
+                <p className="text-[#eaf4ed]/70 text-xs hover:text-white transition-colors cursor-pointer">+51 904 104 511</p>
               </div>
             </div>
 
@@ -133,19 +137,19 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* COLUMNA 4: Horarios (Caja compacta) */}
-          <div className="lg:col-span-3">
+          {/* COLUMNA 4: Horarios */}
+          <div className="lg:col-span-3 mt-4 lg:mt-0">
             <h3 className="text-lg font-bold text-white mb-4 border-b-2 border-[#4a6b53] pb-1 inline-block">Horarios del Safari</h3>
             <div className="bg-[#3a5441]/50 p-4 rounded-xl border border-[#4a6b53] space-y-3">
               
               <div className="flex justify-between items-center border-b border-[#4a6b53] pb-2">
                 <span className="text-[#eaf4ed] text-sm font-medium">Lun a Vie</span>
-                <span className="text-white font-bold text-xs bg-[#4a6b53] px-2 py-1 rounded">09:00 - 18:00</span>
+                <span className="text-white font-bold text-xs bg-[#4a6b53] px-2 py-1 rounded">09:00 - 8:00</span>
               </div>
               
               <div className="flex justify-between items-center border-b border-[#4a6b53] pb-2">
                 <span className="text-[#eaf4ed] text-sm font-medium">Sábados</span>
-                <span className="text-white font-bold text-xs bg-[#4a6b53] px-2 py-1 rounded">10:00 - 14:00</span>
+                <span className="text-white font-bold text-xs bg-[#4a6b53] px-2 py-1 rounded">9:00 - 6:00</span>
               </div>
 
               <div className="flex justify-between items-center pt-1">
@@ -159,7 +163,7 @@ const Footer = () => {
 
         </div>
 
-        {/* ================= BARRA INFERIOR (COPYRIGHT) MÁS DELGADA ================= */}
+        {/* ================= BARRA INFERIOR (COPYRIGHT) ================= */}
         <div className="border-t border-[#4a6b53] pt-6 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-[#eaf4ed]/60">
           <p className="font-medium text-center md:text-left">
             © 2026 Sonriendo Kids. Todos los derechos reservados.

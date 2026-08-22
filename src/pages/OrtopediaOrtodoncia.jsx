@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 // Reemplaza con la foto real de tu clínica
 import imgOrtodoncia from '../assets/imagen1.jpg'; 
 
-const Ortodoncia = () => {
+const OrtopediaOrtodoncia = () => {
   return (
     <div className="bg-[#fdfbf7] min-h-screen font-sans text-gray-800 overflow-x-hidden relative">
       
@@ -42,30 +42,27 @@ const Ortodoncia = () => {
       `}</style>
 
       {/* ================= HEADER HERO - ATARDECER SAFARI ================= */}
-      <div className="relative pt-15 pb-20 bg-gradient-to-br from-[#f4a261] to-[#e76f51] overflow-hidden text-center z-10 animate-reveal">
+      <div className="relative pt-30 pb-20 bg-gradient-to-br from-[#f4a261] to-[#e76f51] overflow-hidden text-center z-10 animate-reveal">
         
         {/* Emojis flotantes interactivos */}
-        <div className="absolute top-16 left-[10%] text-6xl opacity-40 animate-swing cursor-default hover:scale-125 transition-transform duration-300">🐒</div>
-        <div className="absolute bottom-12 left-[20%] text-5xl opacity-30 animate-float-continuous cursor-default">🦷</div>
-        <div className="absolute bottom-10 right-[15%] text-6xl opacity-40 cursor-default hover:-translate-y-4 hover:scale-110 transition-all duration-300 animate-bounce">🦕</div>
-        <div className="absolute top-10 right-[25%] text-5xl opacity-30 animate-swing" style={{ animationDelay: '1s' }}>✨</div>
-        <div className="absolute top-24 left-[30%] text-5xl opacity-20 animate-float-continuous" style={{ animationDelay: '1.5s' }}>📏</div>
+        <div className="absolute top-16 left-[10%] text-8xl opacity-40 animate-swing cursor-default hover:scale-125 transition-transform duration-300">🐒</div>
+        <div className="absolute bottom-12 left-[20%] text-8xl opacity-30 animate-float-continuous cursor-default">🦷</div>
+        <div className="absolute bottom-10 right-[15%] text-9xl opacity-40 cursor-default hover:-translate-y-4 hover:scale-110 transition-all duration-300 animate-bounce">🦜</div>
+     
         
         {/* Formas orgánicas de fondo */}
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-white rounded-full mix-blend-overlay opacity-20 blur-3xl -z-10 animate-pulse"></div>
         <div className="absolute top-0 -right-20 w-80 h-80 bg-[#ffdfba] rounded-full mix-blend-overlay opacity-20 blur-3xl -z-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
 
         <div className="relative z-20">
-          <div className="inline-block px-5 py-2 rounded-full bg-white/10 text-[#fdfbf7] font-black text-sm tracking-widest uppercase mb-4 backdrop-blur-md border border-white/20 shadow-lg transform -rotate-2 hover:rotate-0 transition-transform">
-            🚀 Sonrisas perfectamente alineadas
-          </div>
+          
           <h1 className="text-5xl md:text-6xl lg:text-[4.5rem] font-black text-white mb-6 drop-shadow-xl transform transition-all duration-500 hover:scale-105 leading-tight">
-            Ortodoncia Fija
+            Ortopedia Maxilar & Ortodoncia
           </h1>
           <div className="flex items-center justify-center gap-3 text-white/90 font-bold bg-black/10 inline-flex px-6 py-2 rounded-full backdrop-blur-sm border border-white/10">
             <Link to="/" className="hover:text-white transition-colors">Inicio</Link> 
             <span>/</span> 
-            <span className="text-white">Ortodoncia Fija</span>
+            <span className="text-white">Ortopedia & Ortodoncia</span>
           </div>
         </div>
         
@@ -76,7 +73,15 @@ const Ortodoncia = () => {
           </svg>
         </div>
       </div>
-
+{/* DECORACIÓN DE FONDO: Animales Safari (Otras Secciones) */}
+<div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+  <span className="absolute top-1/4 -left-10 text-[20rem] opacity-[0.20] transform -rotate-6 select-none">
+    🐅
+  </span>
+  <span className="absolute top-2/3 -right-10 text-[20rem] opacity-[0.20] transform rotate-12 select-none">
+    🐒
+  </span>
+</div>
       {/* ================= CONTENIDO PRINCIPAL ================= */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20 relative">
         
@@ -86,18 +91,22 @@ const Ortodoncia = () => {
           {/* Columna Izquierda: Textos con Animación en cascada */}
           <div className="space-y-8 animate-reveal delay-100">
             <h2 className="text-3xl lg:text-4xl font-black text-[#e76f51] mb-6 flex items-center gap-3 bg-white inline-block px-6 py-3 rounded-2xl border-2 border-[#e76f51] shadow-[4px_4px_0_#f4a261] transform -rotate-1">
-              <span className="text-4xl animate-bounce">📏</span> Alineando Sonrisas
+              <span className="text-4xl animate-bounce">📏</span> Ortopedia Maxilar & Ortodoncia 🦷✨
             </h2>
             
             <p className="text-gray-600 text-lg leading-relaxed font-bold">
               <span className="float-left bg-[#f4a261] text-white text-5xl font-black rounded-2xl px-5 py-3 mr-4 mb-2 shadow-[4px_4px_0_#e76f51] transform rotate-3 hover:rotate-0 transition-transform">
-                L
+                ¿
               </span>
-              a <strong className="text-[#e76f51]">ORTODONCIA</strong> y los <strong>BRACKETS</strong> comprenden la corrección de las irregularidades dentales. Se usan para lograr una estética increíble y que los dientes encajen adecuadamente.
+              Notas que los dientes de tu pequeño están chuecos, apiñados o que su mordida no encaja bien?
             </p>
             
             <p className="text-gray-600 text-lg leading-relaxed font-medium">
-              Los tratamientos pueden iniciarse desde la dentición de leche, pasando por la mixta y los dientes permanentes. 🦷
+              Evaluamos su crecimiento y desarrollo para guiar la posición de los maxilares y los dientes en el momento adecuado, logrando una sonrisa saludable, funcional y armoniosa.
+            </p>
+
+            <p className="text-gray-600 text-lg leading-relaxed font-medium">
+              ¡Una evaluación a tiempo puede marcar la diferencia! 💙
             </p>
 
             {/* Viñeta Destacada Estilo "Pro Safari" */}
@@ -186,4 +195,4 @@ const Ortodoncia = () => {
   );
 };
 
-export default Ortodoncia;
+export default OrtopediaOrtodoncia;

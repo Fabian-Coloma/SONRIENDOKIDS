@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import logoSonriendo from '../../assets/LOGOTIPO SIN FONDO SONRIENDO DENTAL KIDS_Mesa de trabajo 1 copia.png';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -33,9 +34,9 @@ const Navbar = () => {
       name: 'Servicios',
       path: '#',
       dropdown: [
-        { name: 'Ortodoncia Fija', path: '/ortodoncia', emoji: '📏' },
+        { name: 'Ortopedia y Ortodoncia', path: '/ortopedia-ortodoncia', emoji: '📏' },
         { name: 'Odontopediatría', path: '/odontopediatria', emoji: '🦷' },
-        { name: 'Sedación Consciente', path: '/sedacion', emoji: '💤' },
+        { name: 'Sedaciones', path: '/sedaciones', emoji: '💤' },
       ]
     },
     {
@@ -66,11 +67,12 @@ const Navbar = () => {
           <div className="flex justify-between items-center">
             
             {/* LOGO */}
-            <Link to="/" className="flex items-center gap-1 group z-[110] relative shrink-0">
-              <span className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#4a6b53] group-hover:scale-105 transition-transform duration-300">
-                Sonriendo<span className="text-[#f4a261]">Kids</span>
-              </span>
-              <span className="text-2xl sm:text-3xl lg:text-4xl transform origin-bottom group-hover:animate-swing">🦁</span>
+          <Link to="/" className="flex items-center group z-[110] relative shrink-0 h-16 lg:h-20 w-48 lg:w-64">
+              <img 
+                src={logoSonriendo} 
+                alt="Logotipo Sonriendo Dental Kids" 
+                className="absolute top-1/2 left-0 -translate-y-1/2 h-24 sm:h-32 lg:h-60 w-auto max-w-none group-hover:scale-105 transition-transform duration-300 object-contain origin-left"
+              />
             </Link>
 
             {/* ================= NAVEGACIÓN DESKTOP ================= */}

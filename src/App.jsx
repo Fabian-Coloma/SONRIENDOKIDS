@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { supabase } from './supabase';
-
+import { AsistenteProvider } from './context/AsistenteContext';
 
 // ================= COMPONENTES COMUNES =================
 import ScrollToTop from "./components/Common/ScrollToTop";
 import Navbar from './components/Common/Navbar';
 import Footer from './components/Common/Footer';
 import Referencias from './pages/Referencias';
+
 // ================= PÁGINAS PÚBLICAS =================
 import Home from './pages/Home';
 import Profesional from './pages/Profesional';
@@ -17,9 +18,9 @@ import Reserva from './pages/Reserva';
 import Login from './pages/Login';
 
 // ================= PÁGINAS DE ESPECIALIDADES =================
-import Ortodoncia from './pages/Ortodoncia';
 import Odontopediatria from './pages/Odontopediatria';
-import Sedacion from './pages/Sedacion';
+import OrtopediaOrtodoncia from './pages/OrtopediaOrtodoncia'; // Nuevo nombre
+import Sedaciones from './pages/Sedaciones'; // Nuevo nombre
 
 // ================= PÁGINAS DE ADMINISTRACIÓN =================
 import AdminLayout from './pages/admin/AdminLayout';
@@ -76,39 +77,38 @@ const PublicLayout = () => (
 function App() {
   return (
     <BrowserRouter>
-      {/* MAGIA AQUÍ: Este componente invisible se encarga de subir el scroll al tope cada vez que cambias de página */}
-      <ScrollToTop />
-      
-      <Routes>
+      <AsistenteProvider> {/* <-- MAGIA: Envuelve todo el contenido de las rutas por dentro */}
+        <ScrollToTop />
         
-        {/* RUTAS PÚBLICAS (Usan Navbar y Footer) */}
-        <Route element={<PublicLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/profesional" element={<Profesional />} />
-          <Route path="/sedes" element={<Sedes />} />
-          <Route path="/ubicanos" element={<Ubicanos />} />
-          <Route path="/reserva" element={<Reserva />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/testimonios" element={<Referencias />} />
-          
-          {/* Rutas de las Especialidades */}
-          <Route path="/ortodoncia" element={<Ortodoncia />} />
+        <Routes>
+          {/* RUTAS PÚBLICAS (Usan Navbar y Footer) */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/profesional" element={<Profesional />} />
+            <Route path="/sedes" element={<Sedes />} />
+            <Route path="/ubicanos" element={<Ubicanos />} />
+            <Route path="/reserva" element={<Reserva />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/testimonios" element={<Referencias />} />
+            
+            {/* Rutas de las Especialidades */}
           <Route path="/odontopediatria" element={<Odontopediatria />} />
-          <Route path="/sedacion" element={<Sedacion />} />
-        </Route>
-
-        {/* RUTAS PRIVADAS (Panel de Administración) */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminResumen />} />
-            <Route path="pacientes" element={<AdminPacientes />} />
-            <Route path="pacientes/:id" element={<AdminHistorial />} />
-            <Route path="finanzas" element={<AdminFinanzas />} />
-            <Route path="citas" element={<AdminCitas />} />
+<Route path="/ortopedia-ortodoncia" element={<OrtopediaOrtodoncia />} />
+<Route path="/sedaciones" element={<Sedaciones />} />
           </Route>
-        </Route>
 
-      </Routes>
+          {/* RUTAS PRIVADAS (Panel de Administración) */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminResumen />} />
+              <Route path="pacientes" element={<AdminPacientes />} />
+              <Route path="pacientes/:id" element={<AdminHistorial />} />
+              <Route path="finanzas" element={<AdminFinanzas />} />
+              <Route path="citas" element={<AdminCitas />} />
+            </Route>
+          </Route>
+        </Routes>
+      </AsistenteProvider>
     </BrowserRouter>
   );
 }

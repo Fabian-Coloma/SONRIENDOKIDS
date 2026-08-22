@@ -1,22 +1,21 @@
 import { Link } from 'react-router-dom';
 
-// IMPORTACIÓN DE LAS FOTOS REALES EN FORMATO JPEG
-import foto1 from '../assets/paty1.jpeg'; 
-import foto2 from '../assets/paty2.jpeg';
-import foto3 from '../assets/paty3.jpeg';
-import foto6 from '../assets/paty6.jpeg';
-import foto7 from '../assets/paty7.jpeg';
-import foto10 from '../assets/paty10.jpeg';
+// IMPORTACIONES EXACTAS SEGÚN TU CAPTURA DE PANTALLA
+import m1 from '../assets/m1.jpeg'; 
+import m2 from '../assets/m2.jpeg'; // Asumiendo que es jpeg por la captura
+import m3 from '../assets/m3.jpeg';
+import m4 from '../assets/m4.jpeg';
+import m5 from '../assets/m5.jpeg';
+import m6 from '../assets/m6.png';
+import m7 from '../assets/m7.png';
+import m8 from '../assets/m8.png';
 
 const Referencias = () => {
-  // Lista de reseñas con las 6 fotos asignadas y colores temáticos Safari
+  // Lista de las 8 reseñas visuales con sus colores temáticos Safari
   const testimonios = [
     {
       id: 1,
-      nombre: "María Fernanda P.",
-      estrellas: "⭐⭐⭐⭐⭐",
-      texto: "¡La Dra. Patty es un ángel! Mi pequeño le tenía terror al dentista y ahora pregunta cuándo vamos a volver al 'campamento'. Tratamiento sin dolor y con muchísimo amor.",
-      foto: foto1, 
+      foto: m1, 
       colorBorde: "#f4a261",
       washiColor: "#ffb3ba",
       delay: "delay-100",
@@ -24,10 +23,7 @@ const Referencias = () => {
     },
     {
       id: 2,
-      nombre: "Carlos Ruiz",
-      estrellas: "⭐⭐⭐⭐⭐",
-      texto: "Excelente servicio. Las instalaciones son hermosas y la paciencia que tienen con los niños de verdad vale oro. Explican todo súper bien. 100% recomendados.",
-      foto: foto2, 
+      foto: m2, 
       colorBorde: "#4a6b53",
       washiColor: "#bae1ff",
       delay: "delay-200",
@@ -35,10 +31,7 @@ const Referencias = () => {
     },
     {
       id: 3,
-      nombre: "Lucía Gómez",
-      estrellas: "⭐⭐⭐⭐⭐",
-      texto: "Llevé a mi niña para ortodoncia y el resultado es mágico. El lugar está diseñado para que no se aburran. ¡La mejor clínica pediátrica del Callao!",
-      foto: foto3,
+      foto: m3,
       colorBorde: "#e76f51",
       washiColor: "#baffc9",
       delay: "delay-300",
@@ -46,10 +39,7 @@ const Referencias = () => {
     },
     {
       id: 4,
-      nombre: "Familia Torres",
-      estrellas: "⭐⭐⭐⭐⭐",
-      texto: "La sedación consciente fue un éxito total. Mi hijo ni se enteró del tratamiento. Mucha profesionalidad y calidez humana. Estamos muy agradecidos.",
-      foto: foto6,
+      foto: m4,
       colorBorde: "#f4a261",
       washiColor: "#ffffba",
       delay: "delay-400",
@@ -57,10 +47,7 @@ const Referencias = () => {
     },
     {
       id: 5,
-      nombre: "Andrea V.",
-      estrellas: "⭐⭐⭐⭐⭐",
-      texto: "Increíble experiencia. Desde que entras la atención es A1. A mi hija le regalaron un globito al terminar. ¡Cero lágrimas!",
-      foto: foto7,
+      foto: m5,
       colorBorde: "#4a6b53",
       washiColor: "#ffdfba",
       delay: "delay-500",
@@ -68,14 +55,27 @@ const Referencias = () => {
     },
     {
       id: 6,
-      nombre: "Roberto Mendoza",
-      estrellas: "⭐⭐⭐⭐⭐",
-      texto: "Buscaba un lugar especializado en niños y superaron mis expectativas. Todo súper limpio, lúdico y la doctora transmite muchísima paz.",
-      foto: foto10,
+      foto: m6,
       colorBorde: "#e76f51",
       washiColor: "#e3d1c3",
       delay: "delay-600",
       floatDelay: "2.5s"
+    },
+    {
+      id: 7,
+      foto: m7,
+      colorBorde: "#f4a261",
+      washiColor: "#cbaacb",
+      delay: "delay-100",
+      floatDelay: "0.8s"
+    },
+    {
+      id: 8,
+      foto: m8,
+      colorBorde: "#4a6b53",
+      washiColor: "#ffcfdc",
+      delay: "delay-200",
+      floatDelay: "1.8s"
     }
   ];
 
@@ -119,33 +119,33 @@ const Referencias = () => {
         .delay-600 { animation-delay: 600ms; }
       `}</style>
 
-      {/* ================= ANIMALITOS Y NATURALEZA FLOTANTE DE FONDO ================= */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
-        <div className="absolute top-32 left-[5%] text-7xl opacity-20 animate-swing">🦒</div>
-        <div className="absolute top-1/3 right-[4%] text-8xl opacity-15 animate-float-continuous" style={{ animationDelay: '1s' }}>🐘</div>
-        <div className="absolute bottom-1/4 left-[3%] text-7xl opacity-20 animate-bounce">🐒</div>
-        <div className="absolute bottom-20 right-[8%] text-7xl opacity-25 animate-swing" style={{ animationDelay: '2s' }}>🦁</div>
-        <div className="absolute top-1/2 left-[50%] text-5xl opacity-15 animate-pulse">🌿</div>
-        <div className="absolute top-20 right-[30%] text-6xl opacity-15 animate-float-continuous">🍃</div>
+      {/* ================= ANIMALITOS GIGANTES DE FONDO ================= */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        <span className="absolute top-1/4 -left-10 text-[25rem] opacity-[0.15] transform -rotate-6 select-none">
+          🦒
+        </span>
+        <span className="absolute top-2/3 -right-10 text-[25rem] opacity-[0.15] transform rotate-12 select-none">
+          🐘
+        </span>
+        <span className="absolute top-[85%] -left-10 text-[20rem] opacity-[0.15] transform -rotate-12 select-none">
+          🦛
+        </span>
       </div>
 
       {/* ================= HEADER HERO - MURO DE EXPLORADORES ================= */}
-      <div className="relative pt-32 pb-24 bg-gradient-to-br from-[#f4a261] to-[#e76f51] overflow-hidden text-center z-10 animate-reveal shadow-md">
+      <div className="relative pt-30 pb-24 bg-gradient-to-br from-[#f4a261] to-[#e76f51] overflow-hidden text-center z-10 animate-reveal shadow-md">
         
         {/* Emojis flotantes del Header */}
-        <div className="absolute top-16 left-[12%] text-6xl opacity-40 animate-swing cursor-default">⭐</div>
-        <div className="absolute bottom-12 left-[20%] text-5xl opacity-30 animate-float-continuous cursor-default">🦁</div>
-        <div className="absolute bottom-10 right-[15%] text-6xl opacity-40 animate-bounce">💖</div>
-        <div className="absolute top-10 right-[25%] text-5xl opacity-30 animate-swing" style={{ animationDelay: '1s' }}>📸</div>
+        <div className="absolute top-16 left-[12%] text-8xl opacity-40 animate-swing cursor-default">⭐</div>
+        <div className="absolute bottom-12 left-[20%] text-8xl opacity-30 animate-float-continuous cursor-default">🦁</div>
+        <div className="absolute top-30 right-[25%] text-8xl opacity-30 animate-swing" style={{ animationDelay: '1s' }}>📸</div>
         
         {/* Formas orgánicas de fondo */}
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-white rounded-full mix-blend-overlay opacity-20 blur-3xl -z-10 animate-pulse"></div>
         <div className="absolute top-0 -right-20 w-80 h-80 bg-[#ffdfba] rounded-full mix-blend-overlay opacity-20 blur-3xl -z-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
 
         <div className="relative z-20">
-          <div className="inline-block px-5 py-2 rounded-full bg-white/20 text-[#fdfbf7] font-black text-sm tracking-widest uppercase mb-4 backdrop-blur-md border border-white/30 shadow-lg transform -rotate-2 hover:rotate-0 transition-transform">
-            💬 Lo que dicen nuestros papás
-          </div>
+          
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 drop-shadow-xl transform transition-all duration-500 hover:scale-105 leading-tight">
             Aventureros <span className="text-[#ffe066]">Felices</span>
           </h1>
@@ -174,63 +174,49 @@ const Referencias = () => {
           </div>
         </div>
 
-        {/* Cuadrícula de Testimonios con Animación Constante */}
+        {/* Cuadrícula de Marcos para Imágenes */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-16">
           
           {testimonios.map((item) => (
             <div key={item.id} className={`animate-reveal ${item.delay}`}>
               
               {/* Contenedor con animación flotante continua */}
-              <div className="animate-float-continuous" style={{ animationDelay: item.floatDelay }}>
+              <div className="animate-float-continuous h-full" style={{ animationDelay: item.floatDelay }}>
                 
-                {/* Tarjeta Estilo 3D Safari */}
+                {/* Tarjeta Estilo Marco Safari */}
                 <div 
-                  className="bg-white rounded-[2.5rem] p-8 relative group h-full flex flex-col justify-between transform hover:-translate-y-3 hover:scale-[1.02] transition-all duration-300"
+                  className="bg-white rounded-[2rem] p-3 pt-6 relative group h-full flex flex-col justify-center transform hover:-translate-y-3 hover:scale-[1.02] transition-all duration-300"
                   style={{
                     border: `4px solid ${item.colorBorde}`,
-                    boxShadow: `10px 10px 0 ${item.colorBorde}`
+                    boxShadow: `8px 8px 0 ${item.colorBorde}`
                   }}
                 >
                   
                   {/* Cinta Washi Tape de Papel */}
                   <div 
-                    className="absolute -top-4 left-1/2 -translate-x-1/2 w-20 h-7 opacity-90 rotate-2 shadow-sm z-20 rounded-sm"
+                    className="absolute -top-4 left-1/2 -translate-x-1/2 w-24 h-8 opacity-90 rotate-2 shadow-sm z-20 rounded-sm"
                     style={{ backgroundColor: item.washiColor }}
                   ></div>
 
-                  {/* Foto estilo Polaroid */}
+                  {/* Imagen de la Reseña */}
                   {item.foto && (
-                    <div className="mb-6 rounded-2xl overflow-hidden border-4 border-gray-100 shadow-md group-hover:shadow-xl transition-all">
-                      <img src={item.foto} alt={`Paciente ${item.nombre}`} className="w-full h-52 object-cover object-[center_25%] transform group-hover:scale-105 transition-transform duration-500" />
+                    <div className="rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center h-full">
+                      <img 
+                        src={item.foto} 
+                        alt={`Reseña de Google Maps ${item.id}`} 
+                        className="w-full h-auto object-contain transform group-hover:scale-[1.03] transition-transform duration-500" 
+                      />
                     </div>
                   )}
 
-                  {/* Información del autor y estrellas */}
-                  <div className="flex-grow">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div 
-                        className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl text-white uppercase shrink-0 shadow-sm transform -rotate-3"
-                        style={{ backgroundColor: item.colorBorde }}
-                      >
-                        {item.nombre.charAt(0)}
-                      </div>
-                      <div>
-                        <h3 className="font-black text-gray-800 text-xl leading-tight">{item.nombre}</h3>
-                        <p className="text-sm tracking-widest mt-1">{item.estrellas}</p>
-                      </div>
-                    </div>
-
-                    <p className="text-gray-600 font-bold text-lg leading-relaxed italic relative mt-2">
-                      <span className="text-5xl text-gray-200 absolute -top-5 -left-2 select-none">"</span>
-                      <span className="relative z-10">{item.texto}</span>
-                      <span className="text-5xl text-gray-200 absolute -bottom-8 -right-2 select-none">"</span>
-                    </p>
-                  </div>
-
-                  {/* Huellita Safari decorativa */}
-                  <div className="absolute bottom-4 right-6 opacity-20 text-3xl transform -rotate-12 group-hover:scale-125 group-hover:rotate-12 transition-transform duration-300">
+                  {/* Huellita Safari decorativa (Flotando en la esquina) */}
+                  <div 
+                    className="absolute -bottom-5 -right-5 w-12 h-12 bg-white rounded-full border-4 flex items-center justify-center text-xl transform rotate-12 group-hover:scale-125 group-hover:-rotate-12 transition-transform duration-300 shadow-sm"
+                    style={{ borderColor: item.colorBorde }}
+                  >
                     🐾
                   </div>
+
                 </div>
 
               </div>
@@ -240,7 +226,7 @@ const Referencias = () => {
         </div>
 
         {/* ================= BOTÓN FINAL LLAMADA A LA ACCIÓN ================= */}
-        <div className="mt-28 text-center animate-reveal delay-600">
+        <div className="mt-28 text-center animate-reveal delay-600 z-10 relative">
           <div className="bg-[#fff5ea] border-4 border-[#f4a261] rounded-[3rem] p-10 max-w-3xl mx-auto shadow-[8px_8px_0_#f4a261] relative">
             <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-5xl animate-bounce">⛺</div>
             <h3 className="text-3xl font-black text-[#6b584a] mb-4 mt-2">¿Listo para que tu pequeño viva la misma experiencia?</h3>

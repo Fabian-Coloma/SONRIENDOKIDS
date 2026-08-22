@@ -1,6 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../supabase';
-
+// ¡Aquí está la magia! Le decimos que entre a la carpeta components
+import AsistenteIA from './components/AsistenteIA'; 
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -13,7 +14,6 @@ const AdminLayout = () => {
 
   const isActive = (path) => location.pathname === path;
 
-  
   return (
     <div className="flex h-screen bg-[#F4F7FE] font-sans overflow-hidden">
       <aside className="w-64 bg-white border-r border-gray-100 flex-col shadow-sm z-10 hidden md:flex">
@@ -58,14 +58,14 @@ const AdminLayout = () => {
             Finanzas y Caja
           </button>
           <button 
-         onClick={() => navigate('/admin/citas')}
-         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-           location.pathname.includes('/admin/citas') ? 'bg-[#003B5C] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-         }`}
-       >
-         <span className="material-symbols-outlined">calendar_month</span>
-         Agenda de Citas
-       </button>
+            onClick={() => navigate('/admin/citas')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
+              location.pathname.includes('/admin/citas') ? 'bg-[#003B5C] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <span className="material-symbols-outlined">calendar_month</span>
+            Agenda de Citas
+          </button>
         </nav>
 
         <div className="p-4 border-t border-gray-100">
@@ -101,6 +101,9 @@ const AdminLayout = () => {
           </div>
         </div>
       </main>
+      
+      {/* Nuestro bot flotante */}
+      <AsistenteIA />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import imgSedacion from '../assets/imagen8.jpg'; 
 
-const Sedacion = () => {
+const Sedaciones = () => {
   return (
     <div className="bg-[#fdfbf7] min-h-screen font-sans text-gray-800 overflow-x-hidden relative">
       
@@ -42,30 +42,27 @@ const Sedacion = () => {
       `}</style>
 
       {/* ================= HEADER HERO - CIELO ESTRELLADO SAFARI ================= */}
-      <div className="relative pt-15 pb-20 bg-gradient-to-br from-[#a67b5b] to-[#8a6347] overflow-hidden text-center z-10 animate-reveal">
+      <div className="relative pt-30 pb-20 bg-gradient-to-br from-[#a67b5b] to-[#8a6347] overflow-hidden text-center z-10 animate-reveal">
         
         {/* Emojis flotantes interactivos y relajantes */}
-        <div className="absolute top-16 left-[10%] text-6xl opacity-40 animate-swing cursor-default hover:scale-125 transition-transform duration-300">💤</div>
-        <div className="absolute bottom-12 left-[20%] text-5xl opacity-30 animate-float-continuous cursor-default">🌙</div>
-        <div className="absolute bottom-10 right-[15%] text-6xl opacity-40 cursor-default hover:-translate-y-4 hover:scale-110 transition-all duration-300 animate-bounce">🐨</div>
-        <div className="absolute top-10 right-[25%] text-5xl opacity-30 animate-swing" style={{ animationDelay: '1s' }}>✨</div>
-        <div className="absolute top-24 left-[30%] text-5xl opacity-20 animate-float-continuous" style={{ animationDelay: '1.5s' }}>☁️</div>
+        <div className="absolute top-16 left-[10%] text-8xl opacity-40 animate-swing cursor-default hover:scale-125 transition-transform duration-300">💤</div>
+        <div className="absolute bottom-12 left-[20%] text-8xl opacity-30 animate-float-continuous cursor-default">🌙</div>
+        <div className="absolute bottom-20 right-[15%] text-8xl opacity-40 cursor-default hover:-translate-y-4 hover:scale-110 transition-all duration-300 animate-bounce">🐨</div>
+        
         
         {/* Formas orgánicas de fondo (Nubes/Sueño) */}
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-white rounded-full mix-blend-overlay opacity-10 blur-3xl -z-10 animate-pulse"></div>
         <div className="absolute top-0 -right-20 w-80 h-80 bg-[#f4a261] rounded-full mix-blend-overlay opacity-20 blur-3xl -z-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
 
         <div className="relative z-20">
-          <div className="inline-block px-5 py-2 rounded-full bg-white/10 text-[#fdfbf7] font-black text-sm tracking-widest uppercase mb-4 backdrop-blur-md border border-white/20 shadow-lg transform -rotate-2 hover:rotate-0 transition-transform">
-            🛡️ 100% Seguro y Relajante
-          </div>
+          
           <h1 className="text-4xl md:text-6xl font-black text-white mb-6 drop-shadow-xl transform transition-all duration-500 hover:scale-105 leading-tight">
-            Sedación Consciente
+            Sedaciones
           </h1>
           <div className="flex items-center justify-center gap-3 text-white/90 font-bold bg-black/10 inline-flex px-6 py-2 rounded-full backdrop-blur-sm border border-white/10">
             <Link to="/" className="hover:text-[#f4a261] transition-colors">Inicio</Link> 
             <span>/</span> 
-            <span className="text-[#f4a261]">Sedación Consciente</span>
+            <span className="text-[#f4a261]">Sedaciones</span>
           </div>
         </div>
         
@@ -77,6 +74,18 @@ const Sedacion = () => {
         </div>
       </div>
 
+      {/* DECORACIÓN DE FONDO: Animales Safari (Especialista) */}
+<div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+  {/* Cebra arriba a la derecha */}
+  <span className="absolute top-50 -right-10 text-[18rem] md:text-[28rem] opacity-[0.25] transform rotate-12 select-none">
+    🦓
+  </span>
+  {/* Elefante abajo a la izquierda */}
+  <span className="absolute -bottom-5 -left-10 text-[18rem] md:text-[28rem] opacity-[0.25] transform -rotate-12 select-none">
+    🐘
+  </span>
+</div>
+
       {/* ================= CONTENIDO PRINCIPAL ================= */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20 relative">
         
@@ -86,23 +95,36 @@ const Sedacion = () => {
           {/* Columna Izquierda: Textos con Animación en cascada */}
           <div className="space-y-6 animate-reveal delay-100">
             <h2 className="text-3xl lg:text-4xl font-black text-[#a67b5b] mb-6 flex items-center gap-3 bg-white inline-block px-6 py-3 rounded-2xl border-2 border-[#a67b5b] shadow-[4px_4px_0_#f4a261] transform -rotate-1">
-              <span className="text-4xl animate-bounce">😌</span> Sin Miedos, Sin Lágrimas
+              <span className="text-4xl animate-bounce">😌</span> Sedaciones 💤🦷
             </h2>
             
             <div className="bg-[#fff5ea] p-6 rounded-[2rem] border-4 border-[#f4a261] shadow-[6px_6px_0_#f4a261] transform hover:-translate-y-2 transition-transform duration-300">
               <p className="text-gray-600 text-lg leading-relaxed font-bold">
                 <span className="float-left bg-[#f4a261] text-white text-5xl font-black rounded-2xl px-5 py-3 mr-4 mb-2 shadow-[4px_4px_0_#a67b5b] transform rotate-3 hover:rotate-0 transition-transform">
-                  C
+                  ¿
                 </span>
-                uando los niños son temerosos, ansiosos, muy pequeñitos o tienen habilidades especiales, forzarlos puede generarles un trauma. La <strong className="text-[#a67b5b]">Sedación Consciente</strong> es la alternativa perfecta y segura.
+                Tu pequeño tiene mucho miedo o ansiedad al dentista?
               </p>
             </div>
 
             <div className="bg-[#eaf4ed] p-6 rounded-[2rem] border-4 border-[#4a6b53] shadow-[6px_6px_0_#4a6b53] transform hover:-translate-y-2 transition-transform duration-300">
-              <p className="text-gray-600 text-lg leading-relaxed font-medium">
-                Consiste en la administración de analgésicos que permiten al paciente relajarse por completo. A diferencia de la anestesia general, <strong className="text-[#4a6b53]">el niño no se duerme del todo</strong>: permanece despierto, respirando por sí mismo y sin sentir ansiedad ni dolor. 🌬️
+              <p className="text-gray-600 text-lg leading-relaxed font-medium mb-4">
+                Contamos con opciones de sedación que se indican según el nivel de ansiedad del niño y la complejidad del tratamiento:
               </p>
+              
+              <div className="space-y-4">
+                <p className="text-gray-600 text-lg leading-relaxed font-medium">
+                  🌿 <strong className="text-[#4a6b53]">Sedación consciente:</strong> el niño permanece despierto, tranquilo y colaborador, ayudando a que su experiencia dental sea más cómoda.
+                </p>
+                <p className="text-gray-600 text-lg leading-relaxed font-medium">
+                  💤 <strong className="text-[#a67b5b]">Sedación intermedia con anestesiología:</strong> indicada en casos de mayor ansiedad o tratamientos más complejos. El niño permanece dormido y respira por sí mismo, bajo la supervisión y monitorización del médico anestesiólogo.
+                </p>
+              </div>
             </div>
+
+            <p className="text-gray-600 text-lg leading-relaxed font-bold px-2">
+              Cada pequeño es diferente. Elegimos la opción más segura y adecuada para él. 💙
+            </p>
           </div>
 
           {/* Columna Derecha: Imagen Polaroid Flotante y Animada */}
@@ -197,4 +219,4 @@ const Sedacion = () => {
   );
 };
 
-export default Sedacion;
+export default Sedaciones;

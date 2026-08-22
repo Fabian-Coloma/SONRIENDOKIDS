@@ -4,15 +4,17 @@ import { supabase } from '../../supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import OdontogramaInteractivo from './OdontogramaInteractivo';
+import { useAsistente } from '../../context/useAsistente.js';
+
 // ==========================================
-// COMPONENTES REUTILIZABLES (UI Limpia)
+// COMPONENTES REUTILIZABLES (AFUERA de la función principal)
 // ==========================================
 const Input = ({ label, type = "text", name, value, onChange, placeholder, colSpan = "col-span-1" }) => (
   <div className={colSpan}>
     <label className="block text-xs font-bold text-[#003B5C] mb-1">{label}</label>
     <input 
       type={type} name={name} 
-      value={value || ''} /* <--- LA MAGIA ESTÁ AQUÍ */
+      value={value || ''} 
       onChange={onChange} placeholder={placeholder}
       className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-[#003B5C] focus:ring-1 focus:ring-[#003B5C] text-sm text-gray-700 transition-colors"
     />
@@ -24,7 +26,7 @@ const TextArea = ({ label, name, value, onChange, placeholder, rows = 3 }) => (
     <label className="block text-xs font-bold text-[#003B5C] mb-1">{label}</label>
     <textarea 
       name={name} 
-      value={value || ''} /* <--- Y TAMBIÉN AQUÍ */
+      value={value || ''} 
       onChange={onChange} placeholder={placeholder} rows={rows}
       className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-[#003B5C] focus:ring-1 focus:ring-[#003B5C] text-sm text-gray-700 transition-colors resize-none"
     />
@@ -69,23 +71,26 @@ const codigosCIE10 = [
   "S02.5 - Fractura de los dientes"
 ];
 
+// ==========================================
+// FUNCIÓN PRINCIPAL DE LA PÁGINA
+// ==========================================
 export default function AdminHistorial() {
-  // Capturar el ID dinámico de la URL
   const { id } = useParams();
   const pacienteIdActual = id;
+  
+ 
+  // 🎙️ CONEXIÓN CON REBECA
+  const { datosFormulario, setDatosFormulario } = useAsistente(); // <-- Agrega la segunda variable
 
   const [pestañaActiva, setPestañaActiva] = useState('filiacion');
   const [guardando, setGuardando] = useState(false);
   const [modalOdontogramaAbierto, setModalOdontogramaAbierto] = useState(false);
-
-  // 👇 ¡ESTA ES LA LÍNEA QUE FALTA! Agrégala aquí 👇
   const [cargandoDatos, setCargandoDatos] = useState(true); 
 
-  // --- NUEVOS ESTADOS PARA NOTAS DE EVOLUCIÓN ---
   const [notasEvolucion, setNotasEvolucion] = useState([]);
   const [guardandoNota, setGuardandoNota] = useState(false);
-  // ... (sigue el resto de tu código)
- const [nuevaNota, setNuevaNota] = useState({
+  
+  const [nuevaNota, setNuevaNota] = useState({
     motivo: '', 
     examen_intraoral: '', 
     diagnostico_cie10: '', 
@@ -94,10 +99,9 @@ export default function AdminHistorial() {
     indicaciones: '', 
     dentista_nombre: 'Dra. Patricia Mora',
     dentista_cop: '' 
-  }); // <--- ¡ESTO ES LO QUE FALTA! Asegúrate de que termine en });
+  }); 
 
   const [hc, setHc] = useState({
-    // ... tus otros datos ...
     nombres: '', fecha_nacimiento: '', sexo: '', colegio: '',
     apoderado_nombre: '', apoderado_parentesco: '', apoderado_dni: '', apoderado_ocupacion: '',
     telefono: '', email: '', domicilio: '', contacto_emergencia: '', telefono_emergencia: '',
@@ -108,28 +112,52 @@ export default function AdminHistorial() {
     examen_extraoral: '', examen_intraoral: '', riesgo_caries: 'Medio', diagnostico_plan: ''
   });
 
-const handleChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setHc(prev => ({ ...prev, [name]: value }));
   };
 
- const handleNotaChange = (e) => {
+  const handleNotaChange = (e) => {
     const { name, value } = e.target;
     setNuevaNota(prev => ({ ...prev, [name]: value }));
   };
-  // 2. EFECTO PARA CARGAR LOS DATOS AL ENTRAR (PACIENTES + HISTORIAL)
+
+// ✨ LA MAGIA DE REBECA: Escuchar, navegar y escribir automáticamente
+  useEffect(() => {
+    if (datosFormulario) {
+      
+      // CASO 1: Rebeca nos pide cambiar de pestaña
+      if (datosFormulario.accion === 'cambiar_pestana') {
+        setPestañaActiva(datosFormulario.tab); // Cambia la vista
+        setTimeout(() => setDatosFormulario({}), 50); // Limpia la orden
+        return; 
+      }
+
+      // CASO 2: Rebeca nos pide llenar un campo de texto
+      if (datosFormulario.campo && datosFormulario.valor) {
+        const { campo, valor } = datosFormulario;
+        const camposDeNota = ['motivo', 'examen_intraoral', 'diagnostico_cie10', 'tratamiento', 'medicamentos', 'indicaciones'];
+        
+        setTimeout(() => {
+          if (camposDeNota.includes(campo)) {
+            setNuevaNota(prev => ({ ...prev, [campo]: valor }));
+          } else {
+            setHc(prev => ({ ...prev, [campo]: valor }));
+          }
+          setDatosFormulario({}); // Limpia la orden
+        }, 50); 
+      }
+    }
+  }, [datosFormulario, setDatosFormulario]);
+  // EFECTO PARA CARGAR LOS DATOS AL ENTRAR
   useEffect(() => {
     const cargarHistorial = async () => {
       if (!pacienteIdActual) return;
 
       try {
-        // PASO A: Traer paciente
         const { data: pacienteData } = await supabase.from('pacientes').select('*').eq('id', pacienteIdActual).single();
-        
-        // PASO B: Traer historial clínico principal
         const { data: hcData } = await supabase.from('historias_clinicas').select('*').eq('paciente_id', pacienteIdActual).single();
 
-        // PASO C: Combinar datos (como ya lo tienes)
         setHc(prev => {
           const nuevosDatos = { ...prev };
           if (pacienteData) {
@@ -140,7 +168,6 @@ const handleChange = (e) => {
           return hcData ? { ...nuevosDatos, ...hcData } : nuevosDatos;
         });
 
-        // 👇 ¡NUEVO! PASO D: Traer Notas de Evolución ordenadas por fecha (de la más reciente a la más antigua)
         const { data: notasData, error: notasError } = await supabase
           .from('notas_evolucion')
           .select('*')
@@ -159,10 +186,10 @@ const handleChange = (e) => {
 
     cargarHistorial();
   }, [pacienteIdActual]);
+
   const handleGuardar = async () => {
     setGuardando(true);
     try {
-      // 1. PREPARAMOS LOS DATOS DE LA HISTORIA CLÍNICA
       const datosParaGuardar = {
         paciente_id: pacienteIdActual, 
         ...hc 
@@ -172,20 +199,16 @@ const handleChange = (e) => {
         datosParaGuardar.fecha_nacimiento = null;
       }
 
-      // Quitamos temporalmente estos 3 porque pertenecen a la otra tabla
       delete datosParaGuardar.nombres;
       delete datosParaGuardar.apoderado_nombre;
       delete datosParaGuardar.telefono;
 
-      // 2. GUARDAMOS LA HISTORIA CLÍNICA
       const { error: errorHc } = await supabase
         .from('historias_clinicas')
         .upsert(datosParaGuardar, { onConflict: 'paciente_id' });
 
       if (errorHc) throw errorHc;
 
-      // 3. ACTUALIZAMOS LA TABLA DE PACIENTES 
-      // (Por si la doctora corrigió el nombre o el WhatsApp en esta pantalla)
       const { error: errorPaciente } = await supabase
         .from('pacientes')
         .update({
@@ -206,8 +229,9 @@ const handleChange = (e) => {
       setGuardando(false);
     }
   };
-const handleGuardarNotaEvolucion = async (e) => {
-    e.preventDefault(); // Evita que la página recargue al hacer submit
+
+  const handleGuardarNotaEvolucion = async (e) => {
+    e.preventDefault(); 
 
     if (!nuevaNota.diagnostico_cie10 || !nuevaNota.tratamiento || !nuevaNota.dentista_cop) {
       alert("Debes completar Diagnóstico, Tratamiento y N° COP para cumplir con la normativa.");
@@ -219,25 +243,23 @@ const handleGuardarNotaEvolucion = async (e) => {
       const fechaActual = new Date();
       const notaFinal = {
         paciente_id: pacienteIdActual,
-        fecha: fechaActual.toISOString().split('T')[0], // YYYY-MM-DD
-        hora: fechaActual.toTimeString().split(' ')[0], // HH:MM:SS
+        fecha: fechaActual.toISOString().split('T')[0], 
+        hora: fechaActual.toTimeString().split(' ')[0], 
         ...nuevaNota
       };
 
       const { error } = await supabase.from('notas_evolucion').insert([notaFinal]);
       if (error) throw error;
 
-      alert("¡Nota firmada y guardada con éxito! Registro inalterable creado.");
+      alert("¡Nota firmada y guardada con éxito!");
       
-      // Limpiamos el formulario
       setNuevaNota({
         motivo: '', examen_intraoral: '', diagnostico_cie10: '', 
         tratamiento: '', medicamentos: '', indicaciones: '', 
         dentista_nombre: 'Dra. Patricia Mora',
-        dentista_cop: nuevaNota.dentista_cop // Mantenemos el COP para que no lo escriba mil veces
+        dentista_cop: nuevaNota.dentista_cop 
       });
 
-      // Recargamos la lista para que la nueva nota aparezca arriba
       const { data: notasActualizadas } = await supabase
         .from('notas_evolucion').select('*').eq('paciente_id', pacienteIdActual).order('created_at', { ascending: false });
       if (notasActualizadas) setNotasEvolucion(notasActualizadas);
@@ -250,34 +272,19 @@ const handleGuardarNotaEvolucion = async (e) => {
     }
   }; 
 
-const tabs = [
+  const tabs = [
     { id: 'filiacion', icon: 'person', label: '1. Filiación' },
     { id: 'anamnesis', icon: 'medical_information', label: '2. Anamnesis y Médicos' },
     { id: 'odontologicos', icon: 'dentistry', label: '3. Ant. Odontológicos' },
     { id: 'habitos', icon: 'child_care', label: '4. Hábitos e Higiene' },
     { id: 'examen', icon: 'stethoscope', label: '5. Examen Clínico' },
-    { id: 'evolucion', icon: 'timeline', label: '6. Notas de Evolución' }, // <-- AQUÍ
+    { id: 'evolucion', icon: 'timeline', label: '6. Notas de Evolución' },
   ];
 
-if (cargandoDatos) {
-  return <div className="p-6 text-center text-[#003B5C] font-bold">Cargando expediente...</div>;
-}
-
- const procesarFinanzasOdontograma = async (carritoRecibido, totalMonto) => {
+  const procesarFinanzasOdontograma = async (carritoRecibido, totalMonto) => {
     try {
-      // 1. GUARDAMOS EN LA MEMORIA DE LA HISTORIA CLÍNICA PARA QUE NO SE BORRE
       setHc(prev => ({ ...prev, odontograma: carritoRecibido }));
 
-      // 2. GUARDAR FINANZAS EN SUPABASE
-      /* 
-      const { error } = await supabase
-        .from('citas')
-        .update({ estado_pago: 'Debe', monto_total: totalMonto })
-        .eq('paciente_id', pacienteIdActual);
-      if (error) throw error;
-      */
-
-      // 3. GENERAR EL PDF
       const doc = new jsPDF();
       doc.setFontSize(20);
       doc.setTextColor(0, 59, 92);
@@ -309,32 +316,33 @@ if (cargandoDatos) {
       doc.text(`Total a Pagar: S/ ${totalMonto}`, 14, finalY + 15);
       doc.save(`Proforma_${(hc.nombres || 'Paciente').replace(/\s+/g, '_')}.pdf`);
 
-      // 4. ABRIR WHATSAPP DE FORMA SEGURA
      if (!hc.telefono || hc.telefono.trim() === '') {
       alert('Odontograma y PDF guardados.\n\nNota: No se pudo abrir WhatsApp porque el paciente no tiene un número registrado.');
     } else {
       const numeroLimpio = hc.telefono.replace(/\D/g, '');
       const numeroWspp = numeroLimpio.startsWith('51') ? numeroLimpio : `51${numeroLimpio}`;
-      
       const mensaje = `¡Hola! Soy la Dra. Patricia Mora, te escribimos de Sonriendo Kids. Hemos evaluado a ${hc.nombres} y por este medio te adjunto la proforma de su tratamiento.`;
       
+      // ✅ Usa solo WhatsApp como preferiste
       const wsppUrl = `https://wa.me/${numeroWspp}?text=${encodeURIComponent(mensaje)}`;
-      
-      // Al ejecutar window.open directamente, el navegador confía en la acción y no la bloquea
       window.open(wsppUrl, '_blank');
-    } // <--- Esta llave cierra el 'else'
+    }
 
     alert("¡Odontograma guardado y PDF generado!\n\nSe abrirá WhatsApp en una nueva pestaña.");
     
-} catch (error) { // <--- Esta llave cierra el 'try' y abre el 'catch'
-    console.error("Error al procesar: ", error);
-    alert("Error al procesar la información.");
-}
+    } catch (error) { 
+      console.error("Error al procesar: ", error);
+      alert("Error al procesar la información.");
+    }
   };
+
+  if (cargandoDatos) {
+    return <div className="p-6 text-center text-[#003B5C] font-bold">Cargando expediente...</div>;
+  }
+
   return (
     <div className="flex flex-col h-full bg-gray-50/50 p-4 md:p-6 animate-fade-in-up">
       
-      {/* Cabecera del Módulo */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-black text-[#003B5C] flex items-center gap-2">
@@ -354,7 +362,6 @@ if (cargandoDatos) {
 
       <div className="flex flex-col lg:flex-row gap-6 h-full min-h-150">
         
-        {/* Sidebar Vertical de Pestañas */}
         <div className="w-full lg:w-64 flex flex-col gap-2 shrink-0">
           {tabs.map(tab => (
             <button
@@ -372,10 +379,8 @@ if (cargandoDatos) {
           ))}
         </div>
 
-        {/* Contenedor del Formulario Activo */}
         <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 overflow-y-auto">
           
-          {/* ================= SECCIÓN 1: FILIACIÓN ================= */}
           {pestañaActiva === 'filiacion' && (
             <div className="space-y-6 animate-fade-in">
               <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4 flex items-center gap-2">
@@ -412,7 +417,6 @@ if (cargandoDatos) {
             </div>
           )}
 
-          {/* ================= SECCIÓN 2: ANAMNESIS Y MÉDICOS ================= */}
           {pestañaActiva === 'anamnesis' && (
             <div className="space-y-6 animate-fade-in">
               <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Motivo de Consulta</h2>
@@ -454,7 +458,6 @@ if (cargandoDatos) {
             </div>
           )}
 
-          {/* ================= SECCIÓN 3: ANT. ODONTOLÓGICOS ================= */}
           {pestañaActiva === 'odontologicos' && (
             <div className="space-y-6 animate-fade-in">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50 p-6 rounded-xl border border-blue-100">
@@ -494,11 +497,8 @@ if (cargandoDatos) {
             </div>
           )}
 
-          {/* ================= SECCIÓN 4: HÁBITOS E HIGIENE ================= */}
           {pestañaActiva === 'habitos' && (
             <div className="space-y-8 animate-fade-in">
-              
-              {/* Hábitos */}
               <div>
                 <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-purple-600">toys</span> Hábitos Orales
@@ -530,7 +530,6 @@ if (cargandoDatos) {
                 </div>
               </div>
 
-              {/* Higiene y Dieta */}
               <div>
                 <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-teal-600">dentistry</span> Higiene Oral y Dieta
@@ -556,7 +555,6 @@ if (cargandoDatos) {
             </div>
           )}
 
-      {/* ================= SECCIÓN 5: EXAMEN CLÍNICO ================= */}
           {pestañaActiva === 'examen' && (
             <div className="space-y-6 animate-fade-in">
               <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Evaluación de la Doctora</h2>
@@ -572,7 +570,6 @@ if (cargandoDatos) {
                 />
               </div>
 
-              {/* Botón para abrir el nuevo Odontograma Interactivo */}
               <div className="mt-8 flex justify-center">
                 <button 
                   onClick={() => setModalOdontogramaAbierto(true)}
@@ -583,14 +580,13 @@ if (cargandoDatos) {
                 </button>
               </div>
 
-              {/* El Modal que se abre */}
               <OdontogramaInteractivo 
                 isOpen={modalOdontogramaAbierto} 
                 onClose={() => setModalOdontogramaAbierto(false)} 
                 onGuardar={procesarFinanzasOdontograma}
                 carritoGuardado={hc.odontograma} 
               />
-              {/* Resto de la evaluación clínica (Riesgo y Diagnóstico) */}
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                 <div className="col-span-1">
                   <label className="block text-xs font-bold text-[#003B5C] mb-2">Nivel de Riesgo de Caries</label>
@@ -608,16 +604,14 @@ if (cargandoDatos) {
                     label="Diagnóstico y Plan de Tratamiento (Procedimientos por cita)" 
                     name="diagnostico_plan" value={hc.diagnostico_plan} onChange={handleChange} rows={3}
                   />
-                  
                 </div>
               </div>
             </div>
           )} 
-          {/* ================= SECCIÓN 6: NOTAS DE EVOLUCIÓN (LEGAL) ================= */}
+
           {pestañaActiva === 'evolucion' && (
             <div className="flex flex-col xl:flex-row gap-8 animate-fade-in h-full">
               
-              {/* COLUMNA IZQUIERDA: LÍNEA DE TIEMPO DE AUDITORÍA */}
               <div className="flex-1 border-r border-gray-100 pr-0 xl:pr-6">
                 <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-6 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#003B5C]">history</span> Historial de Visitas
@@ -656,7 +650,6 @@ if (cargandoDatos) {
                 </div>
               </div>
 
-              {/* COLUMNA DERECHA: REGISTRO DE ATENCIÓN DE HOY */}
               <div className="flex-1">
                 <h2 className="text-lg font-bold text-green-700 border-b border-green-200 pb-2 mb-6 flex items-center gap-2">
                   <span className="material-symbols-outlined">edit_note</span> Registrar Atención de Hoy
@@ -667,7 +660,6 @@ if (cargandoDatos) {
                     <TextArea label="Motivo de Consulta y Evolución" name="motivo" onChange={handleNotaChange} value={nuevaNota.motivo} required />
                     <TextArea label="Examen Clínico / Funciones Vitales (PA)" name="examen_intraoral" onChange={handleNotaChange} value={nuevaNota.examen_intraoral} placeholder="Ej. PA: 120/80. Encías sanas..." required />
                     
-                    {/* Buscador Predictivo CIE-10 */}
                     <div className="col-span-1 md:col-span-2">
                       <label className="block text-xs font-bold text-[#003B5C] mb-1">Diagnóstico (CIE-10)</label>
                       <input 
@@ -702,8 +694,7 @@ if (cargandoDatos) {
               </div>
 
             </div>
-          )} {/* <-
-          - Esta es la llave mágica que faltaba */}
+          )}
 
         </div>
       </div>

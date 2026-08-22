@@ -50,13 +50,11 @@ const Ubicanos = () => {
         <div className="absolute -top-10 -left-10 w-[400px] h-[400px] bg-[#eaf4ed] rounded-full blur-3xl opacity-70 animate-pulse"></div>
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#fff5ea] rounded-full blur-3xl opacity-80 animate-pulse" style={{ animationDelay: '2s' }}></div>
         
-        <div className="absolute top-24 left-[8%] text-7xl opacity-20 animate-swing">🦒</div>
-        <div className="absolute bottom-32 left-[4%] text-6xl opacity-15 animate-float-continuous">🐘</div>
-        <div className="absolute top-1/4 right-[5%] text-7xl opacity-20 transform rotate-12 animate-swing" style={{ animationDelay: '1s' }}>🐒</div>
-        <div className="absolute bottom-10 right-[15%] text-6xl opacity-25 animate-bounce">🦁</div>
-        <div className="absolute top-1/3 left-[45%] text-5xl opacity-20 animate-float-continuous" style={{ animationDelay: '0.5s' }}>🌿</div>
-        <div className="absolute top-20 right-[35%] text-5xl opacity-20 animate-swing">🍃</div>
-        <div className="absolute bottom-1/4 left-[35%] text-5xl opacity-15 animate-pulse">🦓</div>
+        <div className="absolute top-1 left-[3%] text-[20rem] opacity-20 animate-swing">🦒</div>
+        <div className="absolute bottom-32 left-[4%] text-[20rem] opacity-15 animate-float-continuous">🐘</div>
+        <div className="absolute top-150 right-[2%] text-[20rem] opacity-20 transform rotate-12 animate-swing" style={{ animationDelay: '1s' }}>🐒</div>
+        <div className="absolute top-20 right-[25%] text-[20rem] opacity-20 animate-swing">🍃</div>
+        
       </div>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
@@ -110,11 +108,11 @@ const Ubicanos = () => {
                     <h3 className="font-black text-[#f4a261] text-xl mb-3">Horario de Atención</h3>
                     <div className="flex justify-between items-center text-gray-600 font-bold mb-2 bg-[#fdfbf7] p-3 rounded-xl border border-gray-100">
                       <span>Lunes a Viernes</span>
-                      <span className="text-[#4a6b53] font-black bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">9:00 AM - 6:00 PM</span>
+                      <span className="text-[#4a6b53] font-black bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">9:00 AM - 8:00 PM</span>
                     </div>
                     <div className="flex justify-between items-center text-gray-600 font-bold bg-[#fdfbf7] p-3 rounded-xl border border-gray-100">
                       <span>Sábados</span>
-                      <span className="text-[#4a6b53] font-black bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">10:00 AM - 2:00 PM</span>
+                      <span className="text-[#4a6b53] font-black bg-white px-3 py-1 rounded-lg shadow-sm border border-gray-100">9:00 AM - 6:00 PM</span>
                     </div>
                   </div>
                 </div>
@@ -124,7 +122,7 @@ const Ubicanos = () => {
             {/* Redes Sociales y WhatsApp */}
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
               <a 
-                href="https://wa.me/51988988812" 
+                href="https://wa.me/51904104511" 
                 target="_blank" 
                 rel="noreferrer"
                 className="sm:col-span-8 flex items-center justify-center gap-3 w-full bg-[#25D366] text-white py-5 px-6 rounded-[2rem] border-4 border-[#128C7E] font-black text-xl shadow-[6px_6px_0_#128C7E] hover:translate-y-[2px] hover:shadow-[4px_4px_0_#128C7E] transition-all duration-200 overflow-hidden relative group"

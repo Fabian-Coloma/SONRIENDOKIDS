@@ -46,23 +46,20 @@ const Sedes = () => {
       `}</style>
 
       {/* ================= HEADER HERO - EXPLORADORES ================= */}
-      <div className="relative pt-18 pb-20 bg-gradient-to-br from-[#4a6b53] to-[#2d3b32] overflow-hidden text-center z-10 animate-reveal">
+      <div className="relative pt-30 pb-20 bg-gradient-to-br from-[#4a6b53] to-[#2d3b32] overflow-hidden text-center z-10 animate-reveal">
         
         {/* Emojis flotantes interactivos */}
-        <div className="absolute top-16 left-[10%] text-6xl opacity-40 animate-swing cursor-default hover:scale-125 transition-transform duration-300">🐒</div>
-        <div className="absolute bottom-12 left-[15%] text-5xl opacity-30 animate-float-continuous cursor-default">🗺️</div>
-        <div className="absolute bottom-10 right-[10%] text-6xl opacity-30 cursor-default hover:-translate-x-4 hover:scale-110 transition-all duration-300 animate-bounce">🚙</div>
-        <div className="absolute top-10 right-[25%] text-5xl opacity-40 animate-swing" style={{ animationDelay: '1s' }}>🦒</div>
-        <div className="absolute top-1/2 left-[25%] text-4xl opacity-50 animate-pulse">✨</div>
+        <div className="absolute top-16 left-[10%] text-8xl opacity-40 animate-swing cursor-default hover:scale-125 transition-transform duration-300">🐒</div>
+        <div className="absolute bottom-12 left-[15%] text-8xl opacity-30 animate-float-continuous cursor-default">🗺️</div>
+        <div className="absolute bottom-20 right-[10%] text-8xl opacity-30 cursor-default hover:-translate-x-4 hover:scale-110 transition-all duration-300 animate-bounce">🚙</div>
+      
         
         {/* Formas orgánicas de fondo */}
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-[#f4a261] rounded-full mix-blend-overlay opacity-20 blur-3xl -z-10 animate-pulse"></div>
         <div className="absolute top-0 -right-20 w-80 h-80 bg-[#eaf4ed] rounded-full mix-blend-overlay opacity-10 blur-3xl -z-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
 
         <div className="relative z-20">
-          <div className="inline-block px-5 py-2 rounded-full bg-white/10 text-[#fdfbf7] font-black text-sm tracking-widest uppercase mb-4 backdrop-blur-md border border-white/20 shadow-lg transform -rotate-2 hover:rotate-0 transition-transform">
-            📍 ¡Descubre nuestro campamento!
-          </div>
+          
           <h1 className="text-5xl md:text-6xl lg:text-[4.5rem] font-black text-white mb-6 drop-shadow-xl transform transition-all duration-500 hover:scale-105 leading-tight">
             Nuestra Clínica 🏕️
           </h1>
@@ -80,6 +77,16 @@ const Sedes = () => {
           </svg>
         </div>
       </div>
+
+      {/* DECORACIÓN DE FONDO: Animales Safari (Otras Secciones) */}
+<div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+  <span className="absolute top-1/4 -left-10 text-[25rem] opacity-[0.25] transform -rotate-6 select-none">
+    🐅
+  </span>
+  <span className="absolute top-50 -right-10 text-[20rem] opacity-[0.25] transform rotate-12 select-none">
+    🐒
+  </span>
+</div>
 
       {/* ================= CONTENIDO DE LA SEDE ================= */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20">
@@ -197,8 +204,8 @@ const Sedes = () => {
         </div>
 
         {/* Decoración Safari superpuesta adaptada al nuevo alto */}
-        <div className="absolute -bottom-10 -left-5 text-[8rem] opacity-40 animate-swing z-10">🌴</div>
-        <div className="absolute top-0 right-5 text-[6rem] opacity-30 animate-pulse z-10">🦒</div>
+        <div className="absolute -bottom-10 -left-5 text-[8rem] opacity-40 animate-swing z-10">🦩</div>
+        <div className="absolute top-0 right-5 text-[6rem] opacity-30 animate-pulse z-10">🦜</div>
 
         {/* Tarjeta central Glassmorphism (Layout Horizontal para PC) */}
         <div className="relative z-20 max-w-5xl mx-auto px-6">
@@ -209,7 +216,7 @@ const Sedes = () => {
               {/* Textos a la Izquierda */}
               <div className="flex-1">
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-3 drop-shadow-md flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
-                  <div className="inline-block bg-white p-3 rounded-full shadow-lg transform -rotate-6 animate-bounce">
+                  <div className="p-3 rounded-full  transform -rotate-6 animate-bounce">
                     <span className="text-3xl">🧸</span>
                   </div>
                   <span>Espacios <span className="text-[#f4a261]">para ellos</span> </span>

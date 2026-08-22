@@ -109,6 +109,35 @@ const BookingForm = () => {
     setFormData({ ...formData, horaPropuesta: hora });
   };
 
+  // --- NUEVA LÓGICA: ENVÍO DE CORREO A LA DOCTORA ---
+  const notificarAlConsultorio = async () => {
+    const { data, error } = await supabase.functions.invoke('enviar-correo', {
+      body: {
+        to: 'fabianaca17123@gmail.com', // ⚠️ CAMBIA ESTO POR TU CORREO
+        subject: '🦷 ¡Nueva Reserva de Cita desde la Web!',
+        html: `
+          <h2>Nueva Cita Recibida</h2>
+          <p>Un paciente acaba de agendar una cita en la web. Estos son los detalles:</p>
+          <ul>
+            <li><strong>Paciente:</strong> ${formData.nombreNino} (${edadCalculada} años)</li>
+            <li><strong>Apoderado:</strong> ${formData.nombrePadre}</li>
+            <li><strong>WhatsApp:</strong> ${formData.telefono}</li>
+            <li><strong>Motivo:</strong> ${formData.motivo}</li>
+            <li><strong>Fecha:</strong> ${formData.fechaPropuesta}</li>
+            <li><strong>Hora:</strong> ${formData.horaPropuesta}</li>
+          </ul>
+          <p>Recuerda contactarlos por WhatsApp para confirmar.</p>
+        `
+      }
+    });
+
+    if (error) {
+      console.error("Error al enviar notificación:", error);
+    } else {
+      console.log("Notificación enviada al consultorio:", data);
+    }
+  };
+
   // --- ENVÍO A SUPABASE ---
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -161,6 +190,9 @@ const BookingForm = () => {
         ]);
 
       if (errorCita) throw errorCita;
+
+      // PASO 3: Enviar el correo de notificación interno (Edge Function)
+      await notificarAlConsultorio();
 
       alert('✨ ¡Reserva enviada con éxito! Ya aparece en la agenda de la clínica.');
       

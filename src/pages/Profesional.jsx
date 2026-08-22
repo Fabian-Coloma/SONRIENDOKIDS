@@ -42,23 +42,22 @@ const Profesional = () => {
       `}</style>
 
       {/* ================= HEADER HERO - SAFARI ================= */}
-      <div className="relative pt-18 pb-24 bg-gradient-to-br from-[#4a6b53] to-[#2d3b32] overflow-hidden text-center z-10 animate-reveal">
+      <div className="relative pt-30 pb-24 bg-gradient-to-br from-[#4a6b53] to-[#2d3b32] overflow-hidden text-center z-10 animate-reveal">
         
         {/* Emojis flotantes interactivos */}
-        <div className="absolute top-16 left-[10%] text-6xl opacity-40 animate-swing cursor-default hover:scale-125 transition-transform duration-300">👩🏻‍⚕️</div>
-        <div className="absolute bottom-12 left-[20%] text-5xl opacity-30 animate-float-continuous cursor-default">🦒</div>
-        <div className="absolute bottom-10 right-[15%] text-6xl opacity-40 cursor-default hover:-translate-y-4 hover:scale-110 transition-all duration-300 animate-bounce">🐘</div>
-        <div className="absolute top-10 right-[25%] text-5xl opacity-30 animate-swing" style={{ animationDelay: '1s' }}>✨</div>
-        <div className="absolute top-24 left-[30%] text-5xl opacity-20 animate-float-continuous" style={{ animationDelay: '1.5s' }}>🦷</div>
+        <div className="absolute top-16 left-[10%] text-8xl opacity-40 animate-swing cursor-default hover:-translate-y-4 hover:scale-110 transition-all duration-300">👩🏻‍⚕️</div>
+        <div className="absolute bottom-12 left-[20%] text-8xl opacity-30 cursor-default hover:-translate-y-4 hover:scale-110 transition-all duration-300 animate-float-continuous cursor-default">🦒</div>
+        <div className="absolute bottom-20 right-[15%] text-8xl opacity-40 cursor-default hover:-translate-y-4 hover:scale-110 transition-all duration-300">🐘</div>
+        
+        
+        
         
         {/* Formas orgánicas de fondo */}
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-[#f4a261] rounded-full mix-blend-overlay opacity-20 blur-3xl -z-10 animate-pulse"></div>
         <div className="absolute top-0 -right-20 w-80 h-80 bg-[#eaf4ed] rounded-full mix-blend-overlay opacity-10 blur-3xl -z-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
 
         <div className="relative z-20">
-          <div className="inline-block px-5 py-2 rounded-full bg-white/10 text-[#fdfbf7] font-black text-sm tracking-widest uppercase mb-4 backdrop-blur-md border border-white/20 shadow-lg transform -rotate-2 hover:rotate-0 transition-transform">
-            🌟 La mente detrás de las sonrisas
-          </div>
+          
           <h1 className="text-4xl md:text-6xl font-black text-white mb-6 drop-shadow-xl transform transition-all duration-500 hover:scale-105 leading-tight">
             Nuestra Especialista
           </h1>
@@ -76,6 +75,20 @@ const Profesional = () => {
           </svg>
         </div>
       </div>
+
+
+{/* DECORACIÓN DE FONDO: Animales Safari (Especialista) */}
+<div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+  {/* Cebra arriba a la derecha */}
+  <span className="absolute top-40 -right-10 text-[18rem] md:text-[28rem] opacity-[0.20] transform rotate-12 select-none">
+    🦓
+  </span>
+  {/* Elefante abajo a la izquierda */}
+  <span className="absolute -bottom-10 -left-10 text-[18rem] md:text-[28rem] opacity-[0.20] transform -rotate-12 select-none">
+    🐊
+  </span>
+</div>
+
 
       {/* ================= CONTENIDO DE LA DOCTORA ================= */}
       <div className="max-w-6xl mx-auto px-6 lg:px-8 py-20 relative z-10">
@@ -176,6 +189,8 @@ const Profesional = () => {
                 >
                   Agenda una cita con ella 📅
                 </Link>
+
+                
               </div>
 
             </div>

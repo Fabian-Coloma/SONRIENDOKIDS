@@ -43,22 +43,20 @@ const Odontopediatria = () => {
       `}</style>
 
       {/* ================= HEADER HERO - BOSQUE MÁGICO ================= */}
-      <div className="relative pt-15 pb-20 bg-gradient-to-br from-[#4a6b53] to-[#2d3b32] overflow-hidden text-center z-10 animate-reveal">
+      <div className="relative pt-30 pb-20 bg-gradient-to-br from-[#4a6b53] to-[#2d3b32] overflow-hidden text-center z-10 animate-reveal">
         
         {/* Emojis flotantes interactivos */}
-        <div className="absolute top-16 left-[10%] text-6xl opacity-40 animate-swing cursor-default hover:scale-125 transition-transform duration-300">🍃</div>
-        <div className="absolute bottom-12 left-[20%] text-5xl opacity-30 animate-float-continuous cursor-default">🦒</div>
-        <div className="absolute bottom-10 right-[15%] text-6xl opacity-30 cursor-default hover:-translate-y-4 hover:scale-110 transition-all duration-300 animate-bounce">🧚‍♀️</div>
-        <div className="absolute top-10 right-[25%] text-5xl opacity-40 animate-swing" style={{ animationDelay: '1s' }}>✨</div>
+        <div className="absolute top-16 left-[10%] text-8xl opacity-40 animate-swing cursor-default hover:scale-125 transition-transform duration-300">🍃</div>
+        <div className="absolute bottom-12 left-[20%] text-8xl opacity-30 animate-float-continuous cursor-default">🦒</div>
+        <div className="absolute bottom-20 right-[15%] text-9xl opacity-30 cursor-default hover:-translate-y-4 hover:scale-110 transition-all duration-300 animate-bounce">🦛</div>
+        
         
         {/* Formas orgánicas de fondo */}
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-[#f4a261] rounded-full mix-blend-overlay opacity-20 blur-3xl -z-10 animate-pulse"></div>
         <div className="absolute top-0 -right-20 w-80 h-80 bg-white rounded-full mix-blend-overlay opacity-10 blur-3xl -z-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
 
         <div className="relative z-20">
-          <div className="inline-block px-5 py-2 rounded-full bg-white/10 text-[#fdfbf7] font-black text-sm tracking-widest uppercase mb-4 backdrop-blur-md border border-white/20 shadow-lg transform -rotate-2 hover:rotate-0 transition-transform">
-            🦷 Magia para los más pequeños
-          </div>
+          
           <h1 className="text-4xl md:text-6xl font-black text-white mb-6 drop-shadow-xl transform transition-all duration-500 hover:scale-105 leading-tight">
             Odontopediatría
           </h1>
@@ -77,6 +75,16 @@ const Odontopediatria = () => {
         </div>
       </div>
 
+      {/* DECORACIÓN DE FONDO: Animales Safari (Otras Secciones) */}
+<div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+  <span className="absolute top-1/4 -left-10 text-[20rem] opacity-[0.20] transform -rotate-6 select-none">
+    🦏
+  </span>
+  <span className="absolute top-2/3 -right-10 text-[20rem] opacity-[0.20] transform rotate-12 select-none">
+    🦧
+  </span>
+</div>
+
       {/* ================= CONTENIDO PRINCIPAL ================= */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20 relative">
         
@@ -86,18 +94,18 @@ const Odontopediatria = () => {
           {/* Columna Izquierda: Textos con Animación en cascada */}
           <div className="space-y-6 animate-reveal delay-100">
             <h2 className="text-3xl lg:text-4xl font-black text-[#4a6b53] mb-6 flex items-center gap-3 bg-white inline-block px-6 py-3 rounded-2xl border-2 border-[#4a6b53] shadow-[4px_4px_0_#f4a261] transform -rotate-1">
-              <span className="text-4xl animate-bounce">✨</span> Prevención y Magia
+              <span className="text-4xl animate-bounce">✨</span> Odontopediatría 🦷💙
             </h2>
             
             <p className="text-gray-600 text-lg leading-relaxed font-bold">
               <span className="float-left bg-[#f4a261] text-white text-5xl font-black rounded-2xl px-5 py-3 mr-4 mb-2 shadow-[4px_4px_0_#4a6b53] transform rotate-3 hover:rotate-0 transition-transform">
-                L
+                ¿
               </span>
-              a Odontopediatría es la rama dedicada a cuidar las sonrisas de los más pequeños. En nuestra clínica, transformamos el miedo a lo desconocido en una <strong className="text-[#f4a261]">aventura divertida.</strong>
+              Notas manchas, caries, o tu hijo está teniendo dolor en sus dientes? En Sonriendo Dental Kids cuidamos su sonrisa desde los primeros dientecitos, con prevención y tratamientos pensados para cada etapa de su crecimiento.
             </p>
             
             <p className="text-gray-600 text-lg leading-relaxed font-medium">
-              Nos enfocamos en la prevención de enfermedades orales y en educar a los niños y papás sobre la higiene correcta, asegurando que sus dientes de leche y definitivos crezcan sanos y fuertes. 🦁
+              ¡Prevenir hoy es sonreír toda la vida! ✨🦷
             </p>
 
             <div className="pt-6">

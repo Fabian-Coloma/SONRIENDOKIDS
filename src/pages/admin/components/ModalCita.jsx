@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '../../../supabase';
 
 // ¡Regresamos pacientesGuardados a las propiedades!
 export default function ModalCita({ isOpen, onClose, onGuardar, datosIniciales, cargando, pacientesGuardados }) {
@@ -41,8 +42,41 @@ export default function ModalCita({ isOpen, onClose, onGuardar, datosIniciales, 
     }));
   };
 
-  const handleSubmit = (e) => {
+  // --- NUEVA LÓGICA: PREPARAR EL WHATSAPP ---
+  const notificarPorWhatsApp = async (datosCita) => {
+    // 1. Validamos que haya un teléfono (Regla estricta: todo va por WhatsApp)
+    if (!datosCita.telefono) return;
+
+    // 2. Armamos el mensaje que recibirá el paciente
+    // En el futuro, si el estado es 'reprogramado', puedes cambiar este texto dinámicamente
+    const mensaje = `🦷 ¡Hola ${datosCita.nombre_padre}! Desde *Sonriendo Kids* te confirmamos la cita para el súper paciente *${datosCita.nombre_nino}*.\n\n📅 Fecha: ${datosCita.fecha}\n⏰ Hora: ${datosCita.hora}\n\n¡Los esperamos con muchas ganas! ✨`;
+
+    console.log("Mensaje preparado para enviar:", mensaje);
+
+    // 3. Llamamos a nuestra Edge Function (que funcionará en cuanto le pongas las llaves de Meta)
+    try {
+      const { data, error } = await supabase.functions.invoke('enviar-whatsapp', {
+        body: {
+          telefono: datosCita.telefono,
+          mensaje: mensaje
+        }
+      });
+
+      if (error) throw error;
+      console.log("¡WhatsApp enviado con éxito a la cola de mensajes!", data);
+    } catch (err) {
+      console.error("Error al conectar con el servidor de WhatsApp (Faltan claves de Meta):", err);
+    }
+  };
+
+  // --- ENVÍO DEL FORMULARIO ---
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Disparamos la función de WhatsApp (aunque falle internamente hoy, no bloqueará la app)
+    await notificarPorWhatsApp(formData);
+
+    // Guardamos en la base de datos usando la función que viene del componente padre
     onGuardar(formData);
   };
 
@@ -95,7 +129,7 @@ export default function ModalCita({ isOpen, onClose, onGuardar, datosIniciales, 
           </div>
 
           {/* === SECCIÓN CONDICIONAL: NUEVO O EXISTENTE === */}
-          {!formData.id && ( // Solo mostramos esto si estamos creando una nueva cita, no editando
+          {!formData.id && ( 
              <div className="space-y-4 border-t border-gray-100 pt-4 mt-2">
                
                {/* Botones de Selección */}
@@ -108,7 +142,6 @@ export default function ModalCita({ isOpen, onClose, onGuardar, datosIniciales, 
                      checked={tipoPaciente === 'nuevo'} 
                      onChange={() => { 
                        setTipoPaciente('nuevo'); 
-                       // Limpiamos los datos al cambiar a "Nuevo"
                        setFormData(prev => ({...prev, paciente_id: null, nombre_nino: '', nombre_padre: '', telefono: ''}));
                      }} 
                      className="accent-[#003B5C]" 
@@ -129,7 +162,6 @@ export default function ModalCita({ isOpen, onClose, onGuardar, datosIniciales, 
                </div>
 
                {tipoPaciente === 'existente' ? (
-                 // Menú desplegable para clientes existentes
                  <div>
                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Seleccionar Paciente</label>
                    <select
@@ -147,7 +179,6 @@ export default function ModalCita({ isOpen, onClose, onGuardar, datosIniciales, 
                    </select>
                  </div>
                ) : (
-                 // Inputs normales para cliente nuevo
                  <>
                    <div>
                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre del Niño/a</label>
