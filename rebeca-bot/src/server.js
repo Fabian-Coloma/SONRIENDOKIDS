@@ -1,6 +1,6 @@
 import express from "express";
 import "dotenv/config";
-import { rebeca, horasOcupadas, agendarCita } from "./ia.js";
+import { rebeca, horasOcupadas, agendarCita, notificarDoctora } from "./ia.js";
 import { enviarTexto } from "./evolution.js";
 import { agregar, getHistorial, limpiar } from "./memoria.js";
 
@@ -17,12 +17,27 @@ app.post("/webhook", async (req, res) => {
     const msg = req.body.data;
     if (msg.key?.fromMe || msg.key?.remoteJid?.includes("@g.us")) return;
 
-    const telefono = msg.key.remoteJid.split("@")[0];
+    let telefono = msg.key.remoteJid.split("@")[0];
+    const esLid = msg.key.remoteJid.endsWith("@lid");
+    // Perú: si llega sin código de país, agregarlo
+    if (!esLid && !telefono.startsWith("51") && telefono.length <= 9) telefono = "51" + telefono;
+    // Mapa LID → número real (los LIDs son internos de WhatsApp y no se pueden responder)
+    let mapaLid = {};
+    try { mapaLid = JSON.parse(process.env.LID_MAP || "{}"); } catch {}
+    if (esLid) {
+      if (mapaLid[telefono]) {
+        telefono = mapaLid[telefono];
+      } else {
+        console.log(`⚠️ LID desconocido ${telefono} — no se puede responder. Agrégalo a LID_MAP en .env`);
+        return;
+      }
+    }
     const texto = (msg.message?.conversation ||
                    msg.message?.extendedTextMessage?.text || "").trim();
     if (!texto) return;
 
     console.log(`📩 ${telefono}: ${texto}`);
+    console.log("🔍 payload:", JSON.stringify(req.body.data).slice(0, 1200));
     agregar(telefono, "user", texto);
 
     let respuesta = await rebeca(getHistorial(telefono), texto);
@@ -41,11 +56,14 @@ app.post("/webhook", async (req, res) => {
           await agendarCita({
             nombre_nino: d.nombre_nino,
             nombre_apoderado: d.nombre_apoderado,
+            email_apoderado: d.email_apoderado,
             whatsapp: telefono,
             fecha: d.fecha,
             hora: d.hora,
             motivo: d.motivo,
           });
+          // Avisar a la doctora por correo (sin bloquear la respuesta)
+          notificarDoctora({ ...d, whatsapp: telefono });
           const [y, m, dia] = d.fecha.split("-");
           respuesta = `🎉 ¡Listo! Cita agendada para *${d.nombre_nino}*:\n\n📅 ${dia}/${m}/${y}\n🕐 ${d.hora}\n📍 Sonriendo Kids\n\nLa doctora lo verá en su panel. Si necesitas cambiar algo, escríbeme por aquí 💙`;
           limpiar(telefono);

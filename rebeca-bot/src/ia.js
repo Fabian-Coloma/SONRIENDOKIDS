@@ -34,13 +34,16 @@ export async function horasOcupadas(fecha) {
 }
 
 /** Crea (o reutiliza) al paciente por whatsapp e inserta la cita */
-export async function agendarCita({ nombre_nino, nombre_apoderado, whatsapp, fecha, hora, motivo }) {
-  let paciente = await sb(`pacientes?select=id&whatsapp=eq.${whatsapp}`, {}).then((r) => r?.[0]);
+export async function agendarCita({ nombre_nino, nombre_apoderado, email_apoderado, whatsapp, fecha, hora, motivo }) {
+  let paciente = await sb(`pacientes?select=id&whatsapp=eq.${whatsapp}`).then((r) => r?.[0]);
   if (!paciente) {
     paciente = await sb("pacientes", {
       method: "POST",
-      body: [{ nombre_nino, nombre_apoderado, whatsapp }],
+      body: [{ nombre_nino, nombre_apoderado, email: email_apoderado || null, whatsapp }],
     }).then((r) => r?.[0]);
+  } else if (email_apoderado) {
+    // actualizar el correo si llegó nuevo
+    await sb(`pacientes?id=eq.${paciente.id}`, { method: "PATCH", body: { email: email_apoderado } });
   }
   return sb("citas", {
     method: "POST",
@@ -48,19 +51,53 @@ export async function agendarCita({ nombre_nino, nombre_apoderado, whatsapp, fec
   });
 }
 
+/** Correo de confirmación a la doctora vía Edge Function enviar-correo */
+export async function notificarDoctora({ nombre_nino, nombre_apoderado, email_apoderado, whatsapp, fecha, hora, motivo }) {
+  const url = `${process.env.SUPABASE_URL}/functions/v1/enviar-correo`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+      },
+      body: JSON.stringify({
+        to: process.env.CORREO_DOCTORA,
+        subject: `🦷 Nueva cita agendada por WhatsApp — ${nombre_nino}`,
+        html: `
+          <h2>Nueva Cita Recibida (WhatsApp)</h2>
+          <p>Rebeca acaba de agendar una cita. Estos son los detalles:</p>
+          <ul>
+            <li><strong>Niño:</strong> ${nombre_nino}</li>
+            <li><strong>Apoderado:</strong> ${nombre_apoderado}</li>
+            <li><strong>Correo apoderado:</strong> ${email_apoderado || "—"}</li>
+            <li><strong>WhatsApp:</strong> +${whatsapp}</li>
+            <li><strong>Motivo:</strong> ${motivo || "—"}</li>
+            <li><strong>Fecha:</strong> ${fecha}</li>
+            <li><strong>Hora:</strong> ${hora}</li>
+          </ul>
+          <p>Recuerda confirmarla desde el panel.</p>`,
+      }),
+    });
+    console.log("📧 Notificación a la doctora:", res.status);
+  } catch (e) {
+    console.error("❌ Error notificando doctora:", e.message);
+  }
+}
+
 /** Pregunta a Rebeca (Gemini). Devuelve texto o comando JSON */
 export async function rebeca(historial, mensaje) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`;
   const systemPrompt = `Eres Rebeca, la asistente virtual del consultorio odontopediátrico 'Sonriendo Kids', atendiendo por WhatsApp a padres de familia.
 
 Citas próximas: ${JSON.stringify(await citasProximas())}
 
 PUEDES responder preguntas de: horarios de atención (Lun-Sáb 9:00-13:00 y 14:00-17:30), servicios (odontopediatría, ortopedia/ortodoncia, sedaciones), sedes, precios ("escríbenos para cotizar" si no sabes), y AGENDAR citas.
 
-PARA CREAR UNA CITA necesitas reunir SIEMPRE estos 5 datos preguntando de a uno:
-nombre del niño, nombre del apoderado, fecha (AAAA-MM-DD), hora (HH:MM, media hora en punto o y media), motivo.
-Cuando ya tengas los 5, responde SOLO este JSON sin texto adicional:
-{"comando":"agendar_cita","nombre_nino":"...","nombre_apoderado":"...","fecha":"AAAA-MM-DD","hora":"HH:MM","motivo":"..."}
+PARA CREAR UNA CITA necesitas reunir SIEMPRE estos 6 datos preguntando de a uno:
+nombre del niño, nombre del apoderado, correo electrónico del apoderado, fecha (AAAA-MM-DD), hora (HH:MM, media hora en punto o y media), motivo.
+Cuando ya tengas los 6, responde SOLO este JSON sin texto adicional:
+{"comando":"agendar_cita","nombre_nino":"...","nombre_apoderado":"...","email_apoderado":"...","fecha":"AAAA-MM-DD","hora":"HH:MM","motivo":"..."}
 
 Horas ocupadas se validan después; no inventes disponibilidad.
 
@@ -71,12 +108,22 @@ Si NO hay una acción que ejecutar, responde en texto natural, breve, cálido y 
     { role: "user", parts: [{ text: mensaje }] },
   ];
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ systemInstruction: { parts: [{ text: systemPrompt }] }, contents }),
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
+  let data;
+  for (let intento = 1; intento <= 3; intento++) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: systemPrompt }] }, contents }),
+    });
+    data = await res.json();
+    if (!data.error) break;
+    // Saturación temporal de Gemini → esperar y reintentar
+    if ((data.error.message || "").includes("high demand") && intento < 3) {
+      console.log(`⏳ Gemini saturado, reintento ${intento}/3...`);
+      await new Promise((r) => setTimeout(r, 4000 * intento));
+      continue;
+    }
+    throw new Error(data.error.message);
+  }
   return data.candidates[0].content.parts[0].text.trim();
 }

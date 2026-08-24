@@ -1,19 +1,23 @@
 import { useState, useEffect } from 'react';
 import Diente from './Diente';
-
-const CATÁLOGO_PROCEDIMIENTOS = [
-  { id: 1, nombre: 'Caries (Resina)', precio: 80 },
-  { id: 2, nombre: 'Sellante', precio: 50 },
-  { id: 3, nombre: 'Profilaxis', precio: 60 },
-  { id: 4, nombre: 'Pulpotomía', precio: 150 },
-  { id: 5, nombre: 'Corona de Acero', precio: 200 },
-  { id: 6, nombre: 'Extracción', precio: 70 },
-];
+import { CATALOGO_PROCEDIMIENTOS } from './catalogoProcedimientos';
+import { supabase } from '../../supabase';
 
 export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, carritoGuardado = [] }) {
   const [carrito, setCarrito] = useState([]);
   const [modalProc, setModalProc] = useState({ abierto: false, diente: null, cara: null });
   const [procedimientoSeleccionado, setProcedimientoSeleccionado] = useState('');
+  // Catálogo: por defecto el local; si existe la tabla 'precios' en Supabase, usa esa
+  const [catalogo, setCatalogo] = useState(CATALOGO_PROCEDIMIENTOS);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.from('precios').select('*').order('id');
+        if (data && data.length > 0) setCatalogo(data);
+      } catch { /* tabla aún no creada → usa catálogo local */ }
+    })();
+  }, []);
 
  useEffect(() => {
     if (isOpen) {
@@ -45,7 +49,7 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
   const agregarProcedimiento = () => {
     if (!procedimientoSeleccionado) return;
     
-    const procedData = CATÁLOGO_PROCEDIMIENTOS.find(p => p.nombre === procedimientoSeleccionado);
+    const procedData = catalogo.find(p => p.nombre === procedimientoSeleccionado);
     
     setCarrito(prevCarrito => [
       ...prevCarrito, 
@@ -190,8 +194,12 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
               className="w-full px-3 py-2 border border-gray-300 rounded-xl mb-6 outline-none focus:border-[#003B5C] bg-gray-50 text-sm"
             >
               <option value="">-- Elija una opción --</option>
-              {CATÁLOGO_PROCEDIMIENTOS.map(p => (
-                <option key={p.id} value={p.nombre}>{p.nombre} (S/ {p.precio})</option>
+              {['General', 'Niño', 'Permanente'].map(cat => (
+                <optgroup key={cat} label={`── ${cat} ──`}>
+                  {catalogo.filter(p => p.categoria === cat).map(p => (
+                    <option key={p.id} value={p.nombre}>{p.nombre} — S/ {p.precio}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
 

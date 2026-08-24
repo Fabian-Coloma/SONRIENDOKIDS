@@ -17,7 +17,7 @@ async function api(method, path, body) {
 export async function enviarTexto(telefono, texto) {
   await api("POST", `/message/sendText/${INSTANCE}`, {
     number: telefono,
-    text: texto,
+    textMessage: { text: texto },
     delay: 1200,          // pausa humanizada
     linkPreview: false,
   });

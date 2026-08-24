@@ -113,7 +113,7 @@ const BookingForm = () => {
   const notificarAlConsultorio = async () => {
     const { data, error } = await supabase.functions.invoke('enviar-correo', {
       body: {
-        to: 'fabianaca17123@gmail.com', // ⚠️ CAMBIA ESTO POR TU CORREO
+        to: 'sonriendo.contacto@gmail.com', // correo de la Doctora Patricia
         subject: '🦷 ¡Nueva Reserva de Cita desde la Web!',
         html: `
           <h2>Nueva Cita Recibida</h2>
