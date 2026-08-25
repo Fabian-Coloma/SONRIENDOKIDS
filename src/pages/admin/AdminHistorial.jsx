@@ -105,7 +105,7 @@ export default function AdminHistorial() {
     nombres: '', fecha_nacimiento: '', sexo: '', colegio: '',
     apoderado_nombre: '', apoderado_parentesco: '', apoderado_dni: '', apoderado_ocupacion: '',
     telefono: '', email: '', domicilio: '', contacto_emergencia: '', telefono_emergencia: '',
-    motivo_consulta: '', historia_enfermedad: '', medicacion_actual: '', hospitalizaciones: '',
+    motivo_consulta: '', historia_enfermedad: '', medicacion_actual: '', alergia_medicamentos: '', hospitalizaciones: '',
     primera_vez: 'Si', comportamiento_previo: 'N/A', traumatismos: 'No', traumatismos_detalle: '',
     lactancia_biberon: '', succion_no_nutritiva: 'No', respiracion: 'Nasal', otros_habitos: '',
     frecuencia_cepillado: '2', supervision_cepillado: 'Si', uso_fluor: '', dieta_azucares: '',
@@ -437,6 +437,11 @@ export default function AdminHistorial() {
                   label="Medicación actual (Medicinas y dosis)" 
                   name="medicacion_actual" value={hc.medicacion_actual} onChange={handleChange} 
                   placeholder="Dejar vacío si no toma medicamentos" rows={2}
+                />
+                <TextArea 
+                  label="¿Es alérgico a algún medicamento? ¿Cuál?" 
+                  name="alergia_medicamentos" value={hc.alergia_medicamentos || ''} onChange={handleChange} 
+                  placeholder="Ej. Penicilina, aspirina... Dejar vacío si no tiene alergias" rows={2}
                 />
                 <TextArea 
                   label="Hospitalizaciones o cirugías previas" 
