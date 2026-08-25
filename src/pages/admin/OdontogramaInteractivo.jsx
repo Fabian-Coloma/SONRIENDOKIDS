@@ -40,6 +40,12 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
 
   if (!isOpen) return null;
 
+  // Dientes deciduos (niño): 51-65 y 71-85 → solo General + Niño
+  const esDienteNino = (num) => (num >= 51 && num <= 65) || (num >= 71 && num <= 85);
+  const catalogoFiltrado = modalProc.diente != null && esDienteNino(modalProc.diente)
+    ? catalogo.filter(p => p.categoria === 'General' || p.categoria === 'Niño')
+    : catalogo.filter(p => p.categoria === 'General' || p.categoria === 'Permanente');
+
   const abrirModalProcedimiento = (diente, cara) => {
     setProcedimientoSeleccionado('');
     setModalProc({ abierto: true, diente, cara });
@@ -194,9 +200,11 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
               className="w-full px-3 py-2 border border-gray-300 rounded-xl mb-6 outline-none focus:border-[#003B5C] bg-gray-50 text-sm"
             >
               <option value="">-- Elija una opción --</option>
-              {['General', 'Niño', 'Permanente'].map(cat => (
+              {['General', 'Niño', 'Permanente']
+                .filter(cat => catalogoFiltrado.some(p => p.categoria === cat))
+                .map(cat => (
                 <optgroup key={cat} label={`── ${cat} ──`}>
-                  {catalogo.filter(p => p.categoria === cat).map(p => (
+                  {catalogoFiltrado.filter(p => p.categoria === cat).map(p => (
                     <option key={p.id} value={p.nombre}>{p.nombre} — S/ {p.precio}</option>
                   ))}
                 </optgroup>

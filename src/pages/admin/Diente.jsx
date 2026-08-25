@@ -27,9 +27,9 @@ export default function Diente({ numero, tratamientos, onClickCara, posicion = '
         {numero}
       </span>
 
-      {/* Dientito SVG */}
-      <div className={`order-2 ${posicion === 'superior' ? 'mb-2' : 'mt-2'} transition-transform duration-300 ease-out group-hover:scale-150 relative z-10`}>
-        <svg width="26" height="34" viewBox="0 0 24 32" className="drop-shadow-sm">
+      {/* Dientito SVG — contenido dentro del flujo, sin solaparse con la cuadrícula */}
+      <div className={`order-2 flex justify-center overflow-visible ${posicion === 'superior' ? 'mb-2' : 'mt-2'} transition-transform duration-300 ease-out group-hover:scale-125 relative z-10`}>
+        <svg width="24" height="26" viewBox="0 0 24 32" className="drop-shadow-sm">
           {/* corona */}
           <path
             d="M12 1 C7 1 3.5 3.5 3.5 8 C3.5 11 4.5 13 5.5 15 C6.6 17.2 6.8 20 7.2 23.5 C7.5 26.5 8.2 31 10 31 C11.8 31 11.2 25.5 12 25.5 C12.8 25.5 12.2 31 14 31 C15.8 31 16.5 26.5 16.8 23.5 C17.2 20 17.4 17.2 18.5 15 C19.5 13 20.5 11 20.5 8 C20.5 3.5 17 1 12 1 Z"
