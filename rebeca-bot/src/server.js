@@ -3,6 +3,11 @@ import "dotenv/config";
 import { rebeca, horasOcupadas, agendarCita, notificarDoctora } from "./ia.js";
 import { enviarTexto } from "./evolution.js";
 import { agregar, getHistorial, limpiar } from "./memoria.js";
+import { revisarRecordatorios } from "./recordatorios.js";
+
+// Revisar recordatorios cada 10 minutos (1 día antes y 3 horas antes)
+setInterval(revisarRecordatorios, 10 * 60 * 1000);
+setTimeout(revisarRecordatorios, 15 * 1000); // primera revisión al arrancar
 
 const app = express();
 app.use(express.json());
