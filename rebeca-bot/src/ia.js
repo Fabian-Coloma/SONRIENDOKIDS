@@ -7,7 +7,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;              // ej: https://xxxx.
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-async function sb(path, options = {}) {
+export async function sb(path, options = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     headers: {
       apikey: SUPABASE_SERVICE_KEY,
