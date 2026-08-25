@@ -1,9 +1,10 @@
 import express from "express";
 import "dotenv/config";
-import { rebeca, horasOcupadas, agendarCita, notificarDoctora } from "./ia.js";
+import { rebeca, horasOcupadas, agendarCita, notificarDoctora, citasProximas } from "./ia.js";
 import { enviarTexto } from "./evolution.js";
 import { agregar, getHistorial, limpiar } from "./memoria.js";
 import { revisarRecordatorios } from "./recordatorios.js";
+import { obtenerNumeroPorLid, guardarLid, actualizarLid } from "./lidStore.js";
 
 // Revisar recordatorios cada 10 minutos (1 día antes y 3 horas antes)
 setInterval(revisarRecordatorios, 10 * 60 * 1000);
@@ -26,23 +27,56 @@ app.post("/webhook", async (req, res) => {
     const esLid = msg.key.remoteJid.endsWith("@lid");
     // Perú: si llega sin código de país, agregarlo
     if (!esLid && !telefono.startsWith("51") && telefono.length <= 9) telefono = "51" + telefono;
-    // Mapa LID → número real (los LIDs son internos de WhatsApp y no se pueden responder)
-    let mapaLid = {};
-    try { mapaLid = JSON.parse(process.env.LID_MAP || "{}"); } catch {}
-    if (esLid) {
-      if (mapaLid[telefono]) {
-        telefono = mapaLid[telefono];
-      } else {
-        console.log(`⚠️ LID desconocido ${telefono} — no se puede responder. Agrégalo a LID_MAP en .env`);
-        return;
-      }
-    }
     const texto = (msg.message?.conversation ||
                    msg.message?.extendedTextMessage?.text || "").trim();
     if (!texto) return;
 
+    // ---- Resolución de LID → número real ----
+    let modoVerificacion = false; // true mientras le pedimos su número al usuario
+
+    if (esLid) {
+      // 1. Mapa estático del .env (compatibilidad)
+      let mapaLid = {};
+      try { mapaLid = JSON.parse(process.env.LID_MAP || "{}"); } catch {}
+      let real = mapaLid[telefono];
+
+      // 2. Almacén persistente en Supabase (auto-aprendido)
+      if (!real) real = await obtenerNumeroPorLid(telefono);
+
+      if (real) {
+        telefono = real;
+      } else {
+        // LID nuevo: pedir el número para registrarlo
+        const historial = getHistorial(telefono);
+        const ultimoBot = [...historial].reverse().find(m => m.role === "model");
+
+        // ¿Ya le pedimos el número y esto que mandó parece un teléfono?
+        const esTelefono = /^(\+?51)?9\d{8}$|^9\d{8}$/.test(texto.replace(/\s|-/g, ""));
+        if (ultimoBot && ultimoBot.text.includes("confirmar tu número")) {
+          if (esTelefono) {
+            let num = texto.replace(/\D/g, "");
+            if (!num.startsWith("51")) num = "51" + num;
+            await guardarLid(telefono, num);
+            agregar(telefono, "user", texto);
+            console.log(`✅ LID ${telefono} registrado → ${num}`);
+            await enviarTexto(telefono,
+              `🎉 ¡Gracias! Tu número quedó registrado ✅\n\nAhora sí, ¿en qué te puedo ayudar?\n\n1️⃣ Agendar una cita\n2️⃣ Preguntarme horarios o servicios 😊`);
+          } else {
+            await enviarTexto(telefono,
+              `😊 Para poder responderte necesito confirmar tu número de celular.\n\nEscríbelo aquí (ej: 9 digitos, ej: 987654321).`);
+          }
+          return;
+        }
+
+        // Primera vez: pedir el número
+        console.log(`⚠️ LID nuevo ${telefono} → pidiendo número`);
+        await enviarTexto(telefono,
+          `👋 ¡Hola! Soy Rebeca de *Sonriendo Kids* 🦷\n\nAntes de empezar, ¿me confirmas tu número de celular? (escríbelo aquí)`);
+        return;
+      }
+    }
+
     console.log(`📩 ${telefono}: ${texto}`);
-    console.log("🔍 payload:", JSON.stringify(req.body.data).slice(0, 1200));
     agregar(telefono, "user", texto);
 
     let respuesta = await rebeca(getHistorial(telefono), texto);
