@@ -144,7 +144,7 @@ const Profesional = () => {
                   Dra. Patty Mora <span className="animate-swing origin-bottom inline-block">👋</span>
                 </h2>
                 <h3 className="text-xl lg:text-2xl text-[#4a6b53] font-black inline-block bg-white px-5 py-2 rounded-full border-2 border-[#4a6b53] shadow-sm transform -rotate-1">
-                  Odontopediatra & Ortodoncista
+                  Odontopediatra
                 </h3>
               </div>
 
@@ -170,7 +170,7 @@ const Profesional = () => {
                 </li>
                 <li className="flex items-center gap-3 text-[#6b584a] font-black group cursor-default">
                   <span className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl border-2 border-[#eaf4ed] group-hover:scale-110 group-hover:border-[#4a6b53] transition-all shadow-sm">🦷</span>
-                  Ortodoncia preventiva
+                  Diagnóstico de ortodoncia preventiva
                 </li>
                 <li className="flex items-center gap-3 text-[#6b584a] font-black group cursor-default">
                   <span className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl border-2 border-[#eaf4ed] group-hover:scale-110 group-hover:border-[#4a6b53] transition-all shadow-sm">✨</span>
