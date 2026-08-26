@@ -65,8 +65,8 @@ export default function ModalDetalleCita({ isOpen, onClose, cita, onUpdateEstado
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[92vh] shadow-2xl flex flex-col overflow-hidden mx-auto">
+    <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-50 pt-28 pb-6 px-4 backdrop-blur-sm animate-fade-in overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] shadow-2xl flex flex-col overflow-hidden mx-auto">
         
         <div className="bg-[#003B5C] px-6 py-4 flex justify-between items-center shrink-0">
           <h2 className="text-white text-lg font-bold flex items-center gap-2">
