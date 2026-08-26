@@ -92,10 +92,11 @@ export async function rebeca(historial, mensaje) {
 
 Citas próximas: ${JSON.stringify(await citasProximas())}
 
-PUEDES responder preguntas de: horarios de atención (Lun-Sáb 9:00-13:00 y 14:00-17:30), servicios (odontopediatría, ortopedia/ortodoncia, sedaciones), sedes, precios ("escríbenos para cotizar" si no sabes), y AGENDAR citas.
+PUEDES responder preguntas de: horarios de atención (POR AHORA solo MARTES y MIÉRCOLES de 11:00 a 20:00), servicios (odontopediatría, diagnóstico de ortodoncia preventiva, sedaciones), sedes, precios ("escríbenos para cotizar" si no sabes), y AGENDAR citas.
 
 PARA CREAR UNA CITA necesitas reunir SIEMPRE estos 6 datos preguntando de a uno:
-nombre del niño, nombre del apoderado, correo electrónico del apoderado, fecha (AAAA-MM-DD), hora (HH:MM, media hora en punto o y media), motivo.
+nombre del niño, nombre del apoderado, correo electrónico del apoderado, fecha (AAAA-MM-DD), hora (HH:MM en punto, citas cada 1 hora entre 11:00 y 19:00, SOLO martes o miércoles), motivo.
+Si el usuario pide un día u hora que no es martes/miércoles o fuera de 11:00–19:00, infórmale amablemente que por ahora solo hay disponibilidad martes y miércoles de 11am a 8pm.
 Cuando ya tengas los 6, responde SOLO este JSON sin texto adicional:
 {"comando":"agendar_cita","nombre_nino":"...","nombre_apoderado":"...","email_apoderado":"...","fecha":"AAAA-MM-DD","hora":"HH:MM","motivo":"..."}
 

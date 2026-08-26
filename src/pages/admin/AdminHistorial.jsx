@@ -4,6 +4,7 @@ import { supabase } from '../../supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import OdontogramaInteractivo from './OdontogramaInteractivo';
+import ProximaCita from './ProximaCita';
 import { useAsistente } from '../../context/useAsistente.js';
 
 // ==========================================
@@ -96,7 +97,8 @@ export default function AdminHistorial() {
     examen_intraoral: '', 
     diagnostico_cie10: '', 
     tratamiento: '', 
-    medicamentos: '', 
+    medicamentos: '',
+    prescripciones: [{ medicamento: '', dosis: '' }], 
     indicaciones: '', 
     dentista_nombre: 'Dra. Patricia Mora',
     dentista_cop: '' 
@@ -239,6 +241,14 @@ export default function AdminHistorial() {
       return;
     }
 
+    // Sincronizar prescripciones dinámicas → campo medicamentos (texto plano para la BD)
+    const prescripcionesTexto = (nuevaNota.prescripciones || [])
+      .filter(p => p.medicamento)
+      .map(p => `${p.medicamento} — ${p.dosis || 'según indicación'}`)
+      .join('\n');
+    const notaParaGuardar = { ...nuevaNota, medicamentos: prescripcionesTexto || nuevaNota.medicamentos };
+    delete notaParaGuardar.prescripciones;
+
     setGuardandoNota(true);
     try {
       const fechaActual = new Date();
@@ -246,7 +256,7 @@ export default function AdminHistorial() {
         paciente_id: pacienteIdActual,
         fecha: fechaActual.toISOString().split('T')[0], 
         hora: fechaActual.toTimeString().split(' ')[0], 
-        ...nuevaNota
+        ...notaParaGuardar
       };
 
       const { error } = await supabase.from('notas_evolucion').insert([notaFinal]);
@@ -257,6 +267,7 @@ export default function AdminHistorial() {
       setNuevaNota({
         motivo: '', examen_intraoral: '', diagnostico_cie10: '', 
         tratamiento: '', medicamentos: '', indicaciones: '', 
+        prescripciones: [{ medicamento: '', dosis: '' }],
         dentista_nombre: 'Dra. Patricia Mora',
         dentista_cop: nuevaNota.dentista_cop 
       });
@@ -273,8 +284,14 @@ export default function AdminHistorial() {
     }
   }; 
 
-  const tabs = [
-    { id: 'filiacion', icon: 'person', label: '1. Filiación' },
+  // Lista de medicamentos para prescripción
+  const MEDICAMENTOS = [
+    'Amoxicilina', 'Ibuprofeno', 'Paracetamol', 'Azitromicina',
+    'Metronidazol', 'Naproxeno', 'Diclofenaco',
+    'Nistatina', 'Aciclovir', 'Lidocaína 2% con Epinefrina'
+  ];
+
+  const tabs = [    { id: 'filiacion', icon: 'person', label: '1. Filiación' },
     { id: 'anamnesis', icon: 'medical_information', label: '2. Anamnesis y Médicos' },
     { id: 'odontologicos', icon: 'dentistry', label: '3. Ant. Odontológicos' },
     { id: 'habitos', icon: 'child_care', label: '4. Hábitos e Higiene' },
@@ -686,7 +703,63 @@ export default function AdminHistorial() {
                     </div>
 
                     <TextArea label="Tratamiento Ejecutado Hoy" name="tratamiento" onChange={handleNotaChange} value={nuevaNota.tratamiento} required />
-                    <TextArea label="Prescripción (Fármaco, dosis, frecuencia)" name="medicamentos" onChange={handleNotaChange} value={nuevaNota.medicamentos} placeholder="Opcional. Ej. Amoxicilina 500mg..." />
+                    
+                    {/* Prescripción dinámica: select de medicamento + dosis, filas agregables */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-[#003B5C] mb-1">Prescripción (Medicamento + dosis)</label>
+                      {nuevaNota.prescripciones?.map((p, i) => (
+                        <div key={i} className="flex gap-2 items-start">
+                          <select
+                            value={p.medicamento}
+                            onChange={(e) => {
+                              const nuevas = [...(nuevaNota.prescripciones || [])];
+                              nuevas[i] = { ...nuevas[i], medicamento: e.target.value };
+                              setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
+                            }}
+                            className="flex-1 px-3 py-2 rounded-lg border bg-white text-sm"
+                          >
+                            <option value="">-- Seleccione medicamento --</option>
+                            {MEDICAMENTOS.map(m => <option key={m} value={m}>{m}</option>)}
+                          </select>
+                          <input
+                            type="text"
+                            placeholder="Ej. 500mg c/8h x 5 días"
+                            value={p.dosis}
+                            onChange={(e) => {
+                              const nuevas = [...(nuevaNota.prescripciones || [])];
+                              nuevas[i] = { ...nuevas[i], dosis: e.target.value };
+                              setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
+                            }}
+                            className="w-[45%] px-3 py-2 rounded-lg border bg-gray-50 text-sm"
+                          />
+                          {(nuevaNota.prescripciones?.length > 1) && (
+                            <button type="button" onClick={() => {
+                              const nuevas = [...(nuevaNota.prescripciones || [])];
+                              nuevas.splice(i, 1);
+                              setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
+                            }} className="p-2 text-red-400 hover:text-red-600">
+                              <span className="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setNuevaNota({ ...nuevaNota, prescripciones: [...(nuevaNota.prescripciones || [{medicamento:'',dosis:''}]), {medicamento:'',dosis:''}] })}
+                        className="mt-1 flex items-center gap-1 text-sm font-bold text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg border border-green-200 transition-all"
+                      >
+                        <span className="material-symbols-outlined text-base">add_circle</span> Agregar medicamento
+                      </button>
+                    </div>
+
+                    {/* Campo oculto que sincroniza las prescripciones al campo medicamentos (texto plano para la BD) */}
+                    <input type="hidden" name="medicamentos" value={
+                      (nuevaNota.prescripciones || [])
+                        .filter(p => p.medicamento)
+                        .map(p => `${p.medicamento} — ${p.dosis || 'según indicación'}`)
+                        .join('\n')
+                    } onChange={() => {}} />
+
                     <TextArea label="Indicaciones para el hogar" name="indicaciones" onChange={handleNotaChange} value={nuevaNota.indicaciones} placeholder="Opcional." />
                     
                     <div className="col-span-1 md:col-span-2 grid grid-cols-2 gap-4 border-t border-green-200 pt-4">
@@ -706,6 +779,8 @@ export default function AdminHistorial() {
                   <p className="text-[10px] text-center text-gray-400 mt-2">Al guardar, este registro se bloquea y no podrá ser modificado según normativa del MINSA.</p>
                 </form>
               </div>
+
+              <ProximaCita pacienteId={pacienteIdActual} />
 
             </div>
           )}

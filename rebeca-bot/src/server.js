@@ -87,7 +87,16 @@ app.post("/webhook", async (req, res) => {
       if (posibleJson.startsWith("{") && posibleJson.includes("agendar_cita")) {
         const d = JSON.parse(posibleJson);
 
-        // Validar que la hora esté libre ANTES de crear
+        // Validar que la hora esté libre ANTES de crear + horario permitido
+        const fechaCita = new Date(d.fecha + 'T12:00:00');
+        const diaSemana = fechaCita.getUTCDay(); // 2=mar, 3=mié
+        const horaNum = parseInt(d.hora.slice(0, 2), 10);
+        const diaValido = diaSemana === 2 || diaSemana === 3;
+        const horaValida = horaNum >= 11 && horaNum <= 19 && d.hora.slice(3, 5) === '00';
+        
+        if (!diaValido || !horaValida) {
+          respuesta = `📅 Por ahora solo atendemos MARTES y MIÉRCOLES de 11:00 a 20:00, con citas cada hora en punto. ¿Te ofrezco un día y hora dentro de ese horario?`;
+        } else {
         const ocupadas = await horasOcupadas(d.fecha);
         if (ocupadas.includes(d.hora)) {
           respuesta = `😔 Lo siento, las ${d.hora} del ${d.fecha} ya están reservadas. ¿Te ofrezco otra hora?`;
@@ -106,6 +115,7 @@ app.post("/webhook", async (req, res) => {
           const [y, m, dia] = d.fecha.split("-");
           respuesta = `🎉 ¡Listo! Cita agendada para *${d.nombre_nino}*:\n\n📅 ${dia}/${m}/${y}\n🕐 ${d.hora}\n📍 Sonriendo Kids\n\nLa doctora lo verá en su panel. Si necesitas cambiar algo, escríbeme por aquí 💙`;
           limpiar(telefono);
+        }
         }
       }
     } catch { /* era texto normal */ }

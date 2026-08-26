@@ -20,12 +20,15 @@ const BookingForm = () => {
   const [cargandoHorarios, setCargandoHorarios] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
-  // Horarios de atención
-  const horariosAtencion = [
-    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
-    "12:00", "12:30", "14:00", "14:30", "15:00", "15:30", 
-    "16:00", "16:30", "17:00", "17:30"
-  ];
+  // Horarios de atención: citas cada 1 HORA
+    // Disponible SOLO martes y miércoles de 11:00 a 19:00 (última cita 19:00, termina 20:00)
+    const horariosAtencion = [
+      "11:00", "12:00", "13:00", "14:00", "15:00", 
+      "16:00", "17:00", "18:00", "19:00"
+    ];
+
+    // Días disponibles: solo martes (2) y miércoles (3)
+    const DIAS_DISPONIBLES = [2, 3];
 
   // --- LÓGICA DE LA MÁSCARA Y EDAD ---
   const handleFechaChange = (e) => {
@@ -316,7 +319,17 @@ const BookingForm = () => {
             </div>
             <div className="space-y-2 group">
               <label className="text-sm font-bold text-[#6b584a] ml-2">Día de la Cita</label>
-              <input type="date" name="fechaPropuesta" required value={formData.fechaPropuesta} className="w-full px-5 py-3 rounded-2xl border-2 border-[#e3d1c3] bg-white text-gray-700 focus:border-sonriendo-teal focus:ring-4 focus:ring-sonriendo-teal/10 outline-none transition-all duration-300 cursor-pointer font-medium" onChange={handleChange} />
+              <input type="date" name="fechaPropuesta" required value={formData.fechaPropuesta} className="w-full px-5 py-3 rounded-2xl border-2 border-[#e3d1c3] bg-white text-gray-700 focus:border-sonriendo-teal focus:ring-4 focus:ring-sonriendo-teal/10 outline-none transition-all duration-300 cursor-pointer font-medium" min={new Date().toISOString().slice(0,10)} onChange={(e) => {
+                const f = e.target.value;
+                if (!f) { handleChange(e); return; }
+                const dia = new Date(f + 'T12:00:00').getDay();
+                if (!DIAS_DISPONIBLES.includes(dia)) {
+                  alert('📅 Por ahora solo atendemos MARTES y MIÉRCOLES. Elige uno de esos días.');
+                  return;
+                }
+                setHorariosOcupados([]);
+                handleChange(e);
+              }} />
             </div>
           </div>
 
