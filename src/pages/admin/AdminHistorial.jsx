@@ -236,8 +236,8 @@ export default function AdminHistorial() {
   const handleGuardarNotaEvolucion = async (e) => {
     e.preventDefault(); 
 
-    if (!nuevaNota.diagnostico_cie10 || !nuevaNota.tratamiento || !nuevaNota.dentista_cop) {
-      alert("Debes completar Diagnóstico, Tratamiento y N° COP para cumplir con la normativa.");
+    if (!nuevaNota.diagnostico_cie10 || !nuevaNota.tratamiento) {
+      alert("Debes completar Diagnóstico y Tratamiento para guardar.");
       return;
     }
 
@@ -246,8 +246,11 @@ export default function AdminHistorial() {
       .filter(p => p.medicamento)
       .map(p => `${p.medicamento} — ${p.dosis || 'según indicación'}`)
       .join('\n');
-    const notaParaGuardar = { ...nuevaNota, medicamentos: prescripcionesTexto || nuevaNota.medicamentos };
-    delete notaParaGuardar.prescripciones;
+    const { prescripciones, dentista_cop, ...notaLimpia } = nuevaNota;
+    const notaParaGuardar = { 
+      ...notaLimpia, 
+      medicamentos: [prescripcionesTexto, nuevaNota.indicaciones].filter(Boolean).join('\n\n📋 INDICACIONES PARA CASA:\n') || nuevaNota.medicamentos,
+    };
 
     setGuardandoNota(true);
     try {
@@ -262,7 +265,58 @@ export default function AdminHistorial() {
       const { error } = await supabase.from('notas_evolucion').insert([notaFinal]);
       if (error) throw error;
 
-      alert("¡Nota firmada y guardada con éxito!");
+      // 📄 Generar PDF con receta: datos del paciente + consultorio + indicaciones + prescripción
+      const doc = new jsPDF();
+      doc.setFontSize(20);
+      doc.setTextColor(0, 59, 92);
+      doc.text('Sonriendo Kids', 14, 22);
+      doc.setFontSize(10);
+      doc.setTextColor(120);
+      doc.text('Odontopediatría · sonriendokids.fun', 14, 29);
+      doc.setDrawColor(74, 107, 83);
+      doc.line(14, 33, 196, 33);
+      
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text('INDICACIONES PARA CASA', 14, 42);
+      
+      doc.setFontSize(11);
+      doc.setTextColor(60);
+      doc.text(`Paciente: ${hc.nombres || 'Paciente'}`, 14, 52);
+      doc.text(`Fecha: ${fechaActual.toLocaleDateString('es-PE')}`, 14, 59);
+      doc.text(`Doctora: Dra. Patricia Mora`, 14, 66);
+
+      let y = 78;
+      doc.setFontSize(12);
+      doc.setTextColor(0, 59, 92);
+      doc.text('Prescripción:', 14, y);
+      y += 8;
+      doc.setFontSize(11);
+      doc.setTextColor(40);
+      if (prescripcionesTexto) {
+        prescripcionesTexto.split('\n').forEach(linea => {
+          doc.text(`• ${linea}`, 18, y);
+          y += 7;
+        });
+      } else {
+        doc.text('(Sin medicamentos prescritos)', 18, y); y += 7;
+      }
+
+      if (nuevaNota.indicaciones) {
+        y += 6;
+        doc.setFontSize(12);
+        doc.setTextColor(0, 59, 92);
+        doc.text('Indicaciones para el hogar:', 14, y);
+        y += 8;
+        doc.setFontSize(11);
+        doc.setTextColor(40);
+        doc.text(doc.splitTextToSize(nuevaNota.indicaciones, 180), 14, y);
+        y += 10 * Math.ceil(nuevaNota.indicaciones.length / 90);
+      }
+
+      doc.save(`Receta_${(hc.nombres || 'Paciente').replace(/\s+/g, '_')}_${fechaActual.toISOString().slice(0,10)}.pdf`);
+
+      alert("¡Nota firmada y guardada! Se descargó la receta para casa.");
       
       setNuevaNota({
         motivo: '', examen_intraoral: '', diagnostico_cie10: '', 
@@ -278,7 +332,7 @@ export default function AdminHistorial() {
 
     } catch (error) {
       console.error(error);
-      alert("Error al guardar la nota.");
+      alert("Error al guardar la nota: " + (error.message || ''));
     } finally {
       setGuardandoNota(false);
     }
@@ -297,6 +351,7 @@ export default function AdminHistorial() {
     { id: 'habitos', icon: 'child_care', label: '4. Hábitos e Higiene' },
     { id: 'examen', icon: 'stethoscope', label: '5. Examen Clínico' },
     { id: 'evolucion', icon: 'timeline', label: '6. Notas de Evolución' },
+    { id: 'proximacita', icon: 'event_upcoming', label: '7. Próxima Cita' },
   ];
 
   const procesarFinanzasOdontograma = async (carritoRecibido, totalMonto) => {
@@ -762,10 +817,6 @@ export default function AdminHistorial() {
 
                     <TextArea label="Indicaciones para el hogar" name="indicaciones" onChange={handleNotaChange} value={nuevaNota.indicaciones} placeholder="Opcional." />
                     
-                    <div className="col-span-1 md:col-span-2 grid grid-cols-2 gap-4 border-t border-green-200 pt-4">
-                      <Input label="Firma del Profesional" name="dentista_nombre" onChange={handleNotaChange} value={nuevaNota.dentista_nombre} required />
-                      <Input label="Número COP / RNE" name="dentista_cop" onChange={handleNotaChange} value={nuevaNota.dentista_cop} placeholder="Ej. 12345" required />
-                    </div>
                   </div>
 
                   <button 
@@ -779,9 +830,27 @@ export default function AdminHistorial() {
                   <p className="text-[10px] text-center text-gray-400 mt-2">Al guardar, este registro se bloquea y no podrá ser modificado según normativa del MINSA.</p>
                 </form>
               </div>
+            </div>
+          )}
 
+          {pestañaActiva === 'proximacita' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <h2 className="text-lg font-bold text-[#003B5C] mb-4 flex items-center gap-2 border-b pb-3">
+                  <span className="material-symbols-outlined">info</span> Sobre esta sección
+                </h2>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Programa aquí la <strong>próxima visita</strong> del paciente. El sistema enviará
+                  recordatorios automáticos al apoderado en 3 momentos:
+                </p>
+                <ul className="mt-4 space-y-3 text-sm text-gray-700">
+                  <li className="flex items-center gap-3"><span className="bg-blue-100 rounded-lg p-2 material-symbols-outlined text-[#003B5C]">calendar_month</span> 1 <strong>semana</strong> antes de la cita</li>
+                  <li className="flex items-center gap-3"><span className="bg-yellow-100 rounded-lg p-2 material-symbols-outlined text-amber-600">schedule</span> 1 <strong>día</strong> antes de la cita</li>
+                  <li className="flex items-center gap-3"><span className="bg-green-100 rounded-lg p-2 material-symbols-outlined text-green-600">notifications_active</span> 3 <strong>horas</strong> antes de la cita</li>
+                </ul>
+                <p className="text-xs text-gray-400 mt-4">Los recordatorios se envían por WhatsApp y correo electrónico según lo que actives.</p>
+              </div>
               <ProximaCita pacienteId={pacienteIdActual} />
-
             </div>
           )}
 

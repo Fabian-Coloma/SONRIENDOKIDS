@@ -306,7 +306,11 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
                   return c ? c.archivo : undefined;
                 })()}
                 download
-                onClick={(e) => { if (!consentimientoSeleccionado) e.preventDefault(); }}
+                onClick={(e) => {
+                  if (!consentimientoSeleccionado) { e.preventDefault(); return; }
+                  // Cierra modal + odontograma y navega a Notas de Evolución
+                  setTimeout(() => imprimirConsentimiento(e), 300);
+                }}
                 className={`flex-1 py-2.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-1 ${
                   consentimientoSeleccionado ? 'bg-[#003B5C] hover:bg-[#002a42]' : 'bg-gray-300 pointer-events-none'}`}>
                 <span className="material-symbols-outlined text-base">download</span> Imprimir
