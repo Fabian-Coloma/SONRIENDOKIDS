@@ -7,6 +7,7 @@ const BookingForm = () => {
     nombrePadre: '',
     nombreNino: '',
     telefono: '',
+    correo: '',
     motivo: '',
     fechaPropuesta: '',
     horaPropuesta: ''
@@ -20,17 +21,8 @@ const BookingForm = () => {
   const [cargandoHorarios, setCargandoHorarios] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
-  // --- LÓGICA DE LA GRILLA SEMANAL (todos los días visibles) ---
-  // Días de la semana (Lun=1 ... Dom=0). Mostramos Lun a Sáb en columnas.
-  const DIAS_SEMANA = [
-    { key: 1, nombre: 'Lun' },
-    { key: 2, nombre: 'Mar' },
-    { key: 3, nombre: 'Mié' },
-    { key: 4, nombre: 'Jue' },
-    { key: 5, nombre: 'Vie' },
-    { key: 6, nombre: 'Sáb' },
-  ];
-  // Horarios de atención en pantalla: 10:00 - 20:00 (cada 1 hora), todos visibles
+  // --- LÓGICA DE HORARIOS (date picker + botones) ---
+  // Horarios en pantalla: 10:00 - 20:00 (cada 1 hora)
   const horariosAtencion = [
     "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
     "16:00", "17:00", "18:00", "19:00", "20:00"
@@ -38,13 +30,6 @@ const BookingForm = () => {
   // Días que SÍ atienden (libres): mar (2) y mié (3)
   const DIAS_LIBRES = [2, 3];
   const HORA_LIBRE_INICIO = 11; // mar/mié libres desde las 11:00
-
-  // ¿El botón (día, hora) está disponible? Solo mar/mié 11:00-20:00
-  const esDisponible = (diaKey, hora) => {
-    if (!DIAS_LIBRES.includes(diaKey)) return false;
-    const hh = parseInt(hora.slice(0, 2), 10);
-    return hh >= HORA_LIBRE_INICIO;
-  };
 
   // --- LÓGICA DE LA MÁSCARA Y EDAD ---
   const handleFechaChange = (e) => {
@@ -157,6 +142,7 @@ const BookingForm = () => {
             <li><strong>Paciente:</strong> ${formData.nombreNino} (${edadCalculada} años)</li>
             <li><strong>Apoderado:</strong> ${formData.nombrePadre}</li>
             <li><strong>WhatsApp:</strong> ${formData.telefono}</li>
+            <li><strong>Correo:</strong> ${formData.correo || 'No indicado'}</li>
             <li><strong>Motivo:</strong> ${formData.motivo}</li>
             <li><strong>Fecha:</strong> ${formData.fechaPropuesta}</li>
             <li><strong>Hora:</strong> ${formData.horaPropuesta}</li>
@@ -200,8 +186,9 @@ const BookingForm = () => {
             nombre_nino: formData.nombreNino,
             nombre_apoderado: formData.nombrePadre,
             whatsapp: formData.telefono,
+            correo: formData.correo || null,
             fecha_nacimiento: fechaFormateadaParaBD, 
-            edad: parseInt(edadCalculada, 10)         
+            edad: parseInt(edadCalculada, 10)        
           }
         ])
         .select() 
@@ -349,60 +336,61 @@ const BookingForm = () => {
             </select>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2 group">
+              <label className="text-sm font-bold text-[#6b584a] ml-2">Día de la Cita</label>
+              <input type="date" name="fechaPropuesta" required value={formData.fechaPropuesta} className="w-full px-5 py-3 rounded-2xl border-2 border-[#e3d1c3] bg-white text-gray-700 focus:border-sonriendo-teal focus:ring-4 focus:ring-sonriendo-teal/10 outline-none transition-all duration-300 cursor-pointer font-medium" min={new Date().toISOString().slice(0,10)} onChange={(e) => {
+                const f = e.target.value;
+                if (!f) { handleChange(e); setHorariosOcupados([]); return; }
+                const dia = new Date(f + 'T12:00:00').getDay();
+                const esLibre = DIAS_LIBRES.includes(dia);
+                const ocupados = horariosAtencion.filter(h => {
+                  const hh = parseInt(h.slice(0, 2), 10);
+                  if (!esLibre) return true;
+                  if (hh < HORA_LIBRE_INICIO) return true;
+                  return false;
+                });
+                setHorariosOcupados(ocupados);
+                handleChange(e);
+              }} />
+            </div>
+            <div className="space-y-2 group">
+              <label className="text-sm font-bold text-[#6b584a] ml-2">Correo electrónico</label>
+              <input type="email" name="correo" value={formData.correo} placeholder="Ej. familia@correo.com" className="w-full px-5 py-3 rounded-2xl border-2 border-[#e3d1c3] bg-white text-gray-700 focus:border-sonriendo-teal focus:ring-4 focus:ring-sonriendo-teal/10 outline-none transition-all duration-300 font-medium" onChange={handleChange} />
+            </div>
+          </div>
+
           <div className="pt-2">
             <label className="text-sm font-bold text-[#6b584a] ml-2 mb-3 block">
-              Elige el día y la hora de tu cita:
+              {formData.fechaPropuesta ? 'Selecciona una hora disponible:' : 'Elige un día para ver las horas disponibles'}
             </label>
+            
+            {formData.fechaPropuesta ? (
+              <div className="grid grid-cols-4 gap-3">
+                {horariosAtencion.map((hora) => {
+                  const ocupado = horariosOcupados.includes(hora);
+                  const seleccionado = formData.horaPropuesta === hora;
 
-            <div className="overflow-x-auto pb-2">
-              <div className="min-w-[520px]">
-                {/* Encabezado de días */}
-                <div className="grid grid-cols-[64px_repeat(6,1fr)] gap-2 mb-2">
-                  <div></div>
-                  {DIAS_SEMANA.map(d => (
-                    <div key={d.key} className="text-center text-xs font-bold text-[#6b584a] uppercase">
-                      {d.nombre}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Filas de horas */}
-                {horariosAtencion.map((hora) => (
-                  <div key={hora} className="grid grid-cols-[64px_repeat(6,1fr)] gap-2 mb-2">
-                    <div className="flex items-center justify-end pr-1 text-xs font-bold text-gray-400">
+                  return (
+                    <button
+                      key={hora}
+                      type="button"
+                      disabled={ocupado}
+                      onClick={() => handleHoraSelect(hora)}
+                      className={`py-2 rounded-xl font-bold text-sm transition-all duration-300 border-2 
+                        ${ocupado 
+                          ? 'bg-gray-100 border-gray-100 text-gray-400 cursor-not-allowed opacity-60' 
+                          : seleccionado
+                            ? 'bg-sonriendo-teal border-sonriendo-teal text-white shadow-md transform scale-105'
+                            : 'bg-white border-[#e3d1c3] text-gray-600 hover:border-sonriendo-teal hover:text-sonriendo-teal'
+                        }`}
+                    >
                       {hora}
-                    </div>
-                    {DIAS_SEMANA.map(d => {
-                      const disponible = esDisponible(d.key, hora);
-                      const seleccionado = formData.horaPropuesta === hora &&
-                        formData.fechaPropuesta === calcularFechaProxima(d.key);
-                      return (
-                        <button
-                          key={d.key}
-                          type="button"
-                          disabled={!disponible}
-                          onClick={() => seleccionarCelda(d.key, hora)}
-                          className={`py-2 rounded-lg text-xs font-bold transition-all duration-200 border
-                            ${!disponible
-                              ? 'bg-gray-100 border-gray-100 text-gray-400 cursor-not-allowed opacity-60'
-                              : seleccionado
-                                ? 'bg-sonriendo-teal border-sonriendo-teal text-white shadow-md scale-105'
-                                : 'bg-white border-[#e3d1c3] text-gray-600 hover:border-sonriendo-teal hover:text-sonriendo-teal'}`}
-                        >
-                          {disponible ? 'Libre' : 'Ocupado'}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-
-            {formData.fechaPropuesta && formData.horaPropuesta && (
-              <p className="text-sm text-[#4a6b53] font-bold mt-3 ml-2">
-                ✅ Cita seleccionada: {DIAS_SEMANA.find(d => d.key === new Date(formData.fechaPropuesta + 'T12:00:00').getDay())?.nombre} {formData.fechaPropuesta} a las {formData.horaPropuesta}
-              </p>
-            )}
+            ) : null}
           </div>
 
           <div className="pt-6 border-t border-[#e3d1c3]/50">
