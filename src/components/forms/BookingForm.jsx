@@ -78,14 +78,8 @@ const BookingForm = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
 
-    // Si cambia la fecha de reserva, buscamos la disponibilidad
-    if (name === 'fechaPropuesta') {
-      if (value) {
-        consultarDisponibilidad(value);
-      } else {
-        setHorariosOcupados([]);
-      }
-    }
+    // NOTA: la lógica de ocupados por día se calcula en el onChange del date picker.
+    // No consultamos BD aquí para no pisar esa lógica.
   };
 
   const consultarDisponibilidad = async (fecha) => {
@@ -167,6 +161,15 @@ const BookingForm = () => {
       return;
     }
 
+    // Validación de seguridad: solo mar/mié 11:00-20:00
+    if (formData.fechaPropuesta) {
+      const dia = new Date(formData.fechaPropuesta + 'T12:00:00').getDay();
+      const hh = parseInt(formData.horaPropuesta.slice(0, 2), 10);
+      if (!DIAS_LIBRES.includes(dia) || hh < HORA_LIBRE_INICIO) {
+        alert("Ese horario ya no está disponible. Por favor elige uno de los turnos resaltados.");
+        return;
+      }
+    }
     if (edadCalculada === '' || edadCalculada === 'Revisar fecha') {
       alert("Por favor, ingresa una fecha de nacimiento válida (DD/MM/AAAA).");
       return;
