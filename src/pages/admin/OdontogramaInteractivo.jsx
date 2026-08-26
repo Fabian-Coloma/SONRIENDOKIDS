@@ -3,7 +3,7 @@ import Diente from './Diente';
 import { CATALOGO_PROCEDIMIENTOS } from './catalogoProcedimientos';
 import { supabase } from '../../supabase';
 
-export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, carritoGuardado = [], onPresupuestoConfirmado }) {
+export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, carritoGuardado = [], onPresupuestoConfirmado, pacienteId }) {
   const [carrito, setCarrito] = useState([]);
   const [modalProc, setModalProc] = useState({ abierto: false, diente: null, cara: null });
   const [modalConsentimiento, setModalConsentimiento] = useState(false);
@@ -105,9 +105,50 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
     }
   };
 
-  // Al imprimir el consentimiento: cierra modales+odontograma y navega a Evolución
-  const imprimirConsentimiento = (e) => {
+  // Al imprimir el consentimiento:
+  // 1) guarda el PDF del odontograma (piezas + monto) en Supabase,
+  // 2) cierra modales + odontograma y navega a Notas de Evolución
+  const imprimirConsentimiento = async (e) => {
     if (!consentimientoSeleccionado) { e.preventDefault(); return; }
+
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF();
+    doc.setFontSize(20); doc.setTextColor(0, 59, 92);
+    doc.text('Sonriendo Kids', 14, 22);
+    doc.setFontSize(10); doc.setTextColor(120);
+    doc.text('Odontopediatría · sonriendokids.fun', 14, 29);
+    doc.setDrawColor(74, 107, 83); doc.line(14, 33, 196, 33);
+    doc.setFontSize(14); doc.setTextColor(0);
+    doc.text('ODONTOGRAMA Y PRESUPUESTO', 14, 42);
+    doc.setFontSize(11); doc.setTextColor(60);
+    doc.text(`Fecha: ${new Date().toLocaleDateString('es-PE')}`, 14, 52);
+    let y = 64;
+    doc.setFontSize(12); doc.setTextColor(0, 59, 92);
+    doc.text('Tratamientos:', 14, y); y += 8;
+    doc.setFontSize(11); doc.setTextColor(40);
+    carrito.forEach(item => {
+      doc.text(`Pieza ${item.diente} (${item.cara}) - ${item.procedimiento}: S/ ${item.precio}`, 18, y);
+      y += 7;
+    });
+    y += 4;
+    doc.setFontSize(14); doc.setTextColor(0, 59, 92);
+    doc.text(`TOTAL: S/ ${totalProforma}`, 14, y);
+
+    const pdfBlob = doc.output('blob');
+    const fileName = `odontograma_${Date.now()}.pdf`;
+    const { data: up } = await supabase.storage.from('odontogramas').upload(`sesiones/${fileName}`, pdfBlob, { contentType: 'application/pdf', upsert: true }).catch(() => ({ data: null }));
+    let pdfUrl = null;
+    if (up) {
+      pdfUrl = supabase.storage.from('odontogramas').getPublicUrl(`sesiones/${fileName}`).data.publicUrl;
+      // Guardamos el registro en la tabla para "Historial de Visitas"
+      await supabase.from('odontogramas_sesion').insert([{
+        paciente_id: pacienteId,
+        fecha: new Date().toISOString().slice(0, 10),
+        monto_total: totalProforma,
+        detalle: carrito,
+        pdf_url: pdfUrl
+      }]).catch(() => {});
+    }
     // notificar al padre que cierre odontograma y salte a evolución
     if (onPresupuestoConfirmado) onPresupuestoConfirmado();
     setModalConsentimiento(false);

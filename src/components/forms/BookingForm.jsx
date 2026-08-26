@@ -20,15 +20,18 @@ const BookingForm = () => {
   const [cargandoHorarios, setCargandoHorarios] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
-  // Horarios de atención: citas cada 1 HORA
-    // Disponible SOLO martes y miércoles de 11:00 a 19:00 (última cita 19:00, termina 20:00)
-    const horariosAtencion = [
-      "11:00", "12:00", "13:00", "14:00", "15:00", 
-      "16:00", "17:00", "18:00", "19:00"
-    ];
-
-    // Días disponibles: solo martes (2) y miércoles (3)
-    const DIAS_DISPONIBLES = [2, 3];
+  // Horarios de atención: TODOS visibles. Lun-Vie 10:00-20:00, Sáb 10:00-18:00 (citas cada 1 hora)
+  // Solo mar (2) y mié (3) 11:00-20:00 quedan LIBRES; el resto se muestran como OCUPADOS.
+  const horariosAtencion = [
+    "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
+    "16:00", "17:00", "18:00", "19:00", "20:00"
+  ];
+  const HORA_APERTURA = 10;
+  const HORA_CIERRE_LV = 20; // última cita 20:00 (termina 21:00)
+  const HORA_CIERRE_SAB = 18;
+  // Días que SÍ atienden (libres). Lun=1..Dom=0. Mar=2, Mié=3.
+  const DIAS_LIBRES = [2, 3];
+  const HORA_LIBRE_INICIO = 11; // mar/mié libres desde las 11
 
   // --- LÓGICA DE LA MÁSCARA Y EDAD ---
   const handleFechaChange = (e) => {
@@ -323,11 +326,14 @@ const BookingForm = () => {
                 const f = e.target.value;
                 if (!f) { handleChange(e); return; }
                 const dia = new Date(f + 'T12:00:00').getDay();
-                if (!DIAS_DISPONIBLES.includes(dia)) {
-                  alert('📅 Por ahora solo atendemos MARTES y MIÉRCOLES. Elige uno de esos días.');
-                  return;
-                }
-                setHorariosOcupados([]);
+                const esLibre = DIAS_LIBRES.includes(dia);
+                const ocupados = horariosAtencion.filter(h => {
+                  const hh = parseInt(h.slice(0, 2), 10);
+                  if (!esLibre) return true;
+                  if (hh < HORA_LIBRE_INICIO) return true;
+                  return false;
+                });
+                setHorariosOcupados(ocupados);
                 handleChange(e);
               }} />
             </div>

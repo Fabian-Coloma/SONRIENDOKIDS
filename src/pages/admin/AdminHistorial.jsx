@@ -90,6 +90,7 @@ export default function AdminHistorial() {
   const [cargandoDatos, setCargandoDatos] = useState(true); 
 
   const [notasEvolucion, setNotasEvolucion] = useState([]);
+  const [odontogramasSesion, setOdontogramasSesion] = useState([]);
   const [guardandoNota, setGuardandoNota] = useState(false);
   
   const [nuevaNota, setNuevaNota] = useState({
@@ -179,6 +180,13 @@ export default function AdminHistorial() {
 
         if (notasError) throw notasError;
         if (notasData) setNotasEvolucion(notasData);
+
+        const { data: odoData } = await supabase
+          .from('odontogramas_sesion')
+          .select('*')
+          .eq('paciente_id', pacienteIdActual)
+          .order('fecha', { ascending: false });
+        if (odoData) setOdontogramasSesion(odoData);
 
       } catch (error) {
         console.error("Error al cargar datos:", error);
@@ -660,6 +668,7 @@ export default function AdminHistorial() {
 
               <OdontogramaInteractivo 
                 isOpen={modalOdontogramaAbierto} 
+                pacienteId={pacienteIdActual}
                 onClose={() => {
                   setModalOdontogramaAbierto(false);
                   // Si venimos de confirmar presupuesto → saltar a Notas de Evolución
@@ -733,6 +742,30 @@ export default function AdminHistorial() {
                       </div>
                     ))
                   )}
+
+                  {odontogramasSesion.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <h3 className="text-sm font-bold text-[#003B5C] mb-3 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-base">dentistry</span> Odontogramas y Presupuestos guardados
+                      </h3>
+                      <div className="space-y-2">
+                        {odontogramasSesion.map((o) => (
+                          <div key={o.id} className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex justify-between items-center gap-3">
+                            <div className="text-sm">
+                              <span className="font-bold text-[#003B5C]">{o.fecha}</span>
+                              <span className="text-gray-500 ml-2">Total: S/ {o.monto_total}</span>
+                            </div>
+                            {o.pdf_url && (
+                              <a href={o.pdf_url} target="_blank" rel="noopener noreferrer"
+                                className="text-xs bg-[#003B5C] text-white px-3 py-1.5 rounded-lg font-bold hover:bg-[#002a42]">
+                                Ver PDF
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -778,14 +811,14 @@ export default function AdminHistorial() {
                           </select>
                           <input
                             type="text"
-                            placeholder="Ej. 500mg c/8h x 5 días"
+                            placeholder="Cantidad y gramaje (Ej. 500mg c/8h x 5 días)"
                             value={p.dosis}
                             onChange={(e) => {
                               const nuevas = [...(nuevaNota.prescripciones || [])];
                               nuevas[i] = { ...nuevas[i], dosis: e.target.value };
                               setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
                             }}
-                            className="w-[45%] px-3 py-2 rounded-lg border bg-gray-50 text-sm"
+                            className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:border-[#003B5C]"
                           />
                           {(nuevaNota.prescripciones?.length > 1) && (
                             <button type="button" onClick={() => {

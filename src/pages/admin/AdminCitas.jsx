@@ -288,11 +288,11 @@ const AdminCitas = () => {
         cargando={cargando}
       />
 
-      {/* Modal para Ver Detalles y Pagos — centrado en viewport, fuera del flujo de la agenda */}
-      <div className={modalDetalleAbierto ? '' : 'hidden'}>
+      {/* Modal para Ver Detalles y Pagos — solo se monta cuando está abierto */}
+      {modalDetalleAbierto && (
         <ModalDetalleCita 
           cita={citaParaDetalle}
-          isOpen={modalDetalleAbierto}
+          isOpen={true}
           onClose={() => setModalDetalleAbierto(false)}
           onActualizar={cargarDatosPrincipales}
           onUpdateEstadoPago={async (citaId, nuevoEstado) => {
@@ -308,7 +308,7 @@ const AdminCitas = () => {
             await cargarDatosPrincipales();
           }}
         />
-      </div>
+      )}
     </div>
   );
 };
