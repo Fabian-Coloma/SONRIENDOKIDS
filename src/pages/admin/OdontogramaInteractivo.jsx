@@ -6,6 +6,8 @@ import { supabase } from '../../supabase';
 export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, carritoGuardado = [] }) {
   const [carrito, setCarrito] = useState([]);
   const [modalProc, setModalProc] = useState({ abierto: false, diente: null, cara: null });
+  const [modalConsentimiento, setModalConsentimiento] = useState(false);
+  const [consentimientoSeleccionado, setConsentimientoSeleccionado] = useState('');
   const [procedimientoSeleccionado, setProcedimientoSeleccionado] = useState('');
   // Catálogo: por defecto el local; si existe la tabla 'precios' en Supabase, usa esa
   const [catalogo, setCatalogo] = useState(CATALOGO_PROCEDIMIENTOS);
@@ -81,6 +83,25 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
   const handleGuardarFinanzas = () => {
     onGuardar(carrito, totalProforma);
     onClose(); 
+  };
+
+  // Confirmar presupuesto: registra el pago como ingreso en finanzas_ingresos
+  const confirmarPresupuesto = async () => {
+    try {
+      const concepto = carrito.map(c => c.procedimiento).join(' + ');
+      const { error } = await supabase.from('finanzas_ingresos').insert([{
+        concepto: `Presupuesto confirmado — ${concepto}`.slice(0, 200),
+        monto: totalProforma,
+        fecha: new Date().toISOString().slice(0, 10),
+        metodo_pago: 'Efectivo',
+      }]);
+      if (error) throw error;
+      // Además pasa el carrito al flujo normal (PDF/historial)
+      onGuardar(carrito, totalProforma);
+    } catch (e) {
+      console.error('Error registrando ingreso:', e);
+      alert('Hubo un problema registrando el ingreso, pero puedes reintentarlo.');
+    }
   };
 
   return (
@@ -182,6 +203,12 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
               <button onClick={handleGuardarFinanzas} disabled={carrito.length === 0} className="w-full py-3 rounded-xl text-white bg-green-600 hover:bg-green-700 font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-md">
                 <span className="material-symbols-outlined">save</span> Guardar y Enviar PDF
               </button>
+
+              <button onClick={() => { setConsentimientoSeleccionado(''); setModalConsentimiento(true); }}
+                disabled={carrito.length === 0}
+                className="w-full py-3 rounded-xl text-white bg-[#f4a261] hover:bg-[#e76f51] font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-md">
+                <span className="material-symbols-outlined">verified</span> Confirmar Presupuesto
+              </button>
             </div>
           </div>
         </div>
@@ -214,6 +241,66 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
             <div className="flex gap-2">
               <button onClick={() => setModalProc({ abierto: false })} className="flex-1 py-2 rounded-xl text-gray-600 bg-gray-100 font-bold hover:bg-gray-200 text-sm">Cancelar</button>
               <button onClick={agregarProcedimiento} disabled={!procedimientoSeleccionado} className="flex-1 py-2 rounded-xl text-white bg-[#003B5C] font-bold disabled:opacity-50 text-sm">Agregar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de consentimientos — aparece al confirmar presupuesto */}
+      {modalConsentimiento && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-[420px] shadow-2xl">
+            <h3 className="text-lg font-black text-[#003B5C] mb-1 flex items-center gap-2">
+              <span className="material-symbols-outlined">history_edu</span> Consentimientos Informados
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Presupuesto confirmado por <strong>S/ {totalProforma}</strong> ✅ Se registró en Finanzas.
+              Ahora descarga el consentimiento según el tratamiento realizado:
+            </p>
+
+            <div className="space-y-2 mb-5">
+              {[
+                { id: 'pulpar', nombre: 'Tratamiento Pulpar (Endodoncia)', archivo: '/consentimientos/CONSENTIMIENTO TTO PULPAR.docx', emoji: '🦷' },
+                { id: 'curaciones', nombre: 'Curaciones / Obturaciones', archivo: '/consentimientos/CONSENTIMIENTO CURACIONES.docx', emoji: '✨' },
+                { id: 'exodoncias', nombre: 'Exodoncias / Cirugía Oral', archivo: '/consentimientos/CONSENTIMIENTO EXODONCIAS.docx', emoji: '🔧' },
+                { id: 'ortodoncia', nombre: 'Ortodoncia', archivo: '/consentimientos/Ortodoncia.pdf', emoji: '📏' },
+              ].map(c => (
+                <label key={c.id}
+                  className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                    consentimientoSeleccionado === c.id
+                      ? 'border-[#003B5C] bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'}`}>
+                  <input type="radio" name="consentimiento" value={c.id}
+                    checked={consentimientoSeleccionado === c.id}
+                    onChange={() => setConsentimientoSeleccionado(c.id)}
+                    className="accent-[#003B5C] w-4 h-4" />
+                  <span className="text-xl">{c.emoji}</span>
+                  <span className="text-sm font-bold text-gray-700">{c.nombre}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={() => setModalConsentimiento(false)}
+                className="flex-1 py-2.5 rounded-xl text-gray-600 bg-gray-100 font-bold hover:bg-gray-200 text-sm">
+                Cerrar
+              </button>
+              <a
+                href={(() => {
+                  const c = [
+                    { id: 'pulpar', archivo: '/consentimientos/CONSENTIMIENTO TTO PULPAR.docx' },
+                    { id: 'curaciones', archivo: '/consentimientos/CONSENTIMIENTO CURACIONES.docx' },
+                    { id: 'exodoncias', archivo: '/consentimientos/CONSENTIMIENTO EXODONCIAS.docx' },
+                    { id: 'ortodoncia', archivo: '/consentimientos/Ortodoncia.pdf' },
+                  ].find(c => c.id === consentimientoSeleccionado);
+                  return c ? c.archivo : undefined;
+                })()}
+                download
+                onClick={(e) => { if (!consentimientoSeleccionado) e.preventDefault(); }}
+                className={`flex-1 py-2.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-1 ${
+                  consentimientoSeleccionado ? 'bg-[#003B5C] hover:bg-[#002a42]' : 'bg-gray-300 pointer-events-none'}`}>
+                <span className="material-symbols-outlined text-base">download</span> Imprimir
+              </a>
             </div>
           </div>
         </div>
