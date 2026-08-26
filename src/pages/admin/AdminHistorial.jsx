@@ -85,6 +85,7 @@ export default function AdminHistorial() {
   const [pestañaActiva, setPestañaActiva] = useState('filiacion');
   const [guardando, setGuardando] = useState(false);
   const [modalOdontogramaAbierto, setModalOdontogramaAbierto] = useState(false);
+  const [irAEvolucionTrasConfirmar, setIrAEvolucionTrasConfirmar] = useState(false);
   const [cargandoDatos, setCargandoDatos] = useState(true); 
 
   const [notasEvolucion, setNotasEvolucion] = useState([]);
@@ -587,9 +588,17 @@ export default function AdminHistorial() {
 
               <OdontogramaInteractivo 
                 isOpen={modalOdontogramaAbierto} 
-                onClose={() => setModalOdontogramaAbierto(false)} 
+                onClose={() => {
+                  setModalOdontogramaAbierto(false);
+                  // Si venimos de confirmar presupuesto → saltar a Notas de Evolución
+                  if (irAEvolucionTrasConfirmar) {
+                    setIrAEvolucionTrasConfirmar(false);
+                    setPestañaActiva('evolucion');
+                  }
+                }} 
                 onGuardar={procesarFinanzasOdontograma}
                 carritoGuardado={hc.odontograma} 
+                onPresupuestoConfirmado={() => setIrAEvolucionTrasConfirmar(true)}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">

@@ -293,6 +293,18 @@ const AdminCitas = () => {
         isOpen={modalDetalleAbierto}
         onClose={() => setModalDetalleAbierto(false)}
         onActualizar={cargarDatosPrincipales}
+        onUpdateEstadoPago={async (citaId, nuevoEstado) => {
+          const { error } = await supabase.from('citas')
+            .update({ estado_pago: nuevoEstado }).eq('id', citaId);
+          if (error) {
+            console.error('Error actualizando estado de pago:', error);
+            alert('No se pudo actualizar el estado de pago.');
+            return;
+          }
+          // Actualizar en memoria y refrescar desde BD (agenda + modal sincronizados)
+          setCitaParaDetalle(prev => prev ? { ...prev, estado_pago: nuevoEstado } : prev);
+          await cargarDatosPrincipales();
+        }}
       />
     </div>
   );

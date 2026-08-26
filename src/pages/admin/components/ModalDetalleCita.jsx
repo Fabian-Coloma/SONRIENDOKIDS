@@ -66,9 +66,9 @@ export default function ModalDetalleCita({ isOpen, onClose, cita, onUpdateEstado
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[92vh] shadow-2xl flex flex-col overflow-hidden mx-auto">
         
-        <div className="bg-[#003B5C] px-6 py-4 flex justify-between items-center">
+        <div className="bg-[#003B5C] px-6 py-4 flex justify-between items-center shrink-0">
           <h2 className="text-white text-lg font-bold flex items-center gap-2">
             <span className="material-symbols-outlined">event_note</span>
             Detalles de la Cita
@@ -78,37 +78,33 @@ export default function ModalDetalleCita({ isOpen, onClose, cita, onUpdateEstado
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[85vh]">
+        <div className="p-6 overflow-y-auto">
           
-          <div className="flex items-center gap-4 mb-6 border-b pb-6 border-gray-100">
+          {/* Cabecera del paciente: centrada, sin cortes */}
+          <div className="flex flex-col items-center gap-3 mb-6 border-b pb-6 border-gray-100 text-center">
             <div className="bg-blue-50 p-4 rounded-full text-[#003B5C]">
               <span className="material-symbols-outlined text-4xl block">face</span>
             </div>
-            <div>
-              <h3 
-                onClick={() => {
-                  if (cita.paciente_id) {
-                    onClose(); // Cerramos el modal
-                    
-                    // 👇 ASÍ DEBE QUEDAR: coincidiendo con tu App.jsx
-                    navigate(`/admin/pacientes/${cita.paciente_id}`); 
-                    
-                  } else {
-                    alert("Este paciente no está registrado en la base de datos aún.");
-                  }
-                }}
-                title="Ver historial completo"
-                className="text-2xl font-black text-[#003B5C] hover:text-blue-600 hover:underline cursor-pointer transition-all flex items-center gap-2 group"
-              >
-                {nombrePaciente}
-                {cita.paciente_id && (
-                  <span className="material-symbols-outlined text-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                    open_in_new
-                  </span>
-                )}
-              </h3>
-              <p className="text-gray-500 font-medium">Apoderado: <span className="text-gray-700">{apoderado}</span></p>
-            </div>
+            <h3 
+              onClick={() => {
+                if (cita.paciente_id) {
+                  onClose();
+                  navigate(`/admin/pacientes/${cita.paciente_id}`); 
+                } else {
+                  alert("Este paciente no está registrado en la base de datos aún.");
+                }
+              }}
+              title="Ver historial completo"
+              className="text-2xl font-black text-[#003B5C] hover:text-blue-600 hover:underline cursor-pointer transition-all flex items-center gap-2 group break-words text-center"
+            >
+              {nombrePaciente}
+              {cita.paciente_id && (
+                <span className="material-symbols-outlined text-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                  open_in_new
+                </span>
+              )}
+            </h3>
+            <p className="text-gray-500 font-medium">Apoderado: <span className="text-gray-700">{apoderado}</span></p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

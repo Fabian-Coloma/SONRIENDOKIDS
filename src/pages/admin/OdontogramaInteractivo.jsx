@@ -3,7 +3,7 @@ import Diente from './Diente';
 import { CATALOGO_PROCEDIMIENTOS } from './catalogoProcedimientos';
 import { supabase } from '../../supabase';
 
-export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, carritoGuardado = [] }) {
+export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, carritoGuardado = [], onPresupuestoConfirmado }) {
   const [carrito, setCarrito] = useState([]);
   const [modalProc, setModalProc] = useState({ abierto: false, diente: null, cara: null });
   const [modalConsentimiento, setModalConsentimiento] = useState(false);
@@ -96,12 +96,22 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
         metodo_pago: 'Efectivo',
       }]);
       if (error) throw error;
-      // Además pasa el carrito al flujo normal (PDF/historial)
-      onGuardar(carrito, totalProforma);
+      // Abre modal de consentimientos (el carrito ya se guardó vía onGuardar)
+      setConsentimientoSeleccionado('');
+      setModalConsentimiento(true);
     } catch (e) {
       console.error('Error registrando ingreso:', e);
       alert('Hubo un problema registrando el ingreso, pero puedes reintentarlo.');
     }
+  };
+
+  // Al imprimir el consentimiento: cierra modales+odontograma y navega a Evolución
+  const imprimirConsentimiento = (e) => {
+    if (!consentimientoSeleccionado) { e.preventDefault(); return; }
+    // notificar al padre que cierre odontograma y salte a evolución
+    if (onPresupuestoConfirmado) onPresupuestoConfirmado();
+    setModalConsentimiento(false);
+    onClose();
   };
 
   return (
@@ -204,7 +214,7 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
                 <span className="material-symbols-outlined">save</span> Guardar y Enviar PDF
               </button>
 
-              <button onClick={() => { setConsentimientoSeleccionado(''); setModalConsentimiento(true); }}
+              <button onClick={confirmarPresupuesto}
                 disabled={carrito.length === 0}
                 className="w-full py-3 rounded-xl text-white bg-[#f4a261] hover:bg-[#e76f51] font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-md">
                 <span className="material-symbols-outlined">verified</span> Confirmar Presupuesto
