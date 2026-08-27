@@ -4,6 +4,7 @@ import { supabase } from '../../supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import OdontogramaInteractivo from './OdontogramaInteractivo';
+import ProximaCita from './ProximaCita';
 import { useAsistente } from '../../context/useAsistente.js';
 
 // ==========================================
@@ -85,9 +86,11 @@ export default function AdminHistorial() {
   const [pestañaActiva, setPestañaActiva] = useState('filiacion');
   const [guardando, setGuardando] = useState(false);
   const [modalOdontogramaAbierto, setModalOdontogramaAbierto] = useState(false);
+  const [irAEvolucionTrasConfirmar, setIrAEvolucionTrasConfirmar] = useState(false);
   const [cargandoDatos, setCargandoDatos] = useState(true); 
 
   const [notasEvolucion, setNotasEvolucion] = useState([]);
+  const [odontogramasSesion, setOdontogramasSesion] = useState([]);
   const [guardandoNota, setGuardandoNota] = useState(false);
   
   const [nuevaNota, setNuevaNota] = useState({
@@ -95,7 +98,8 @@ export default function AdminHistorial() {
     examen_intraoral: '', 
     diagnostico_cie10: '', 
     tratamiento: '', 
-    medicamentos: '', 
+    medicamentos: '',
+    prescripciones: [{ medicamento: '', dosis: '' }], 
     indicaciones: '', 
     dentista_nombre: 'Dra. Patricia Mora',
     dentista_cop: '' 
@@ -105,7 +109,7 @@ export default function AdminHistorial() {
     nombres: '', fecha_nacimiento: '', sexo: '', colegio: '',
     apoderado_nombre: '', apoderado_parentesco: '', apoderado_dni: '', apoderado_ocupacion: '',
     telefono: '', email: '', domicilio: '', contacto_emergencia: '', telefono_emergencia: '',
-    motivo_consulta: '', historia_enfermedad: '', medicacion_actual: '', hospitalizaciones: '',
+    motivo_consulta: '', historia_enfermedad: '', medicacion_actual: '', alergia_medicamentos: '', hospitalizaciones: '',
     primera_vez: 'Si', comportamiento_previo: 'N/A', traumatismos: 'No', traumatismos_detalle: '',
     lactancia_biberon: '', succion_no_nutritiva: 'No', respiracion: 'Nasal', otros_habitos: '',
     frecuencia_cepillado: '2', supervision_cepillado: 'Si', uso_fluor: '', dieta_azucares: '',
@@ -177,6 +181,13 @@ export default function AdminHistorial() {
         if (notasError) throw notasError;
         if (notasData) setNotasEvolucion(notasData);
 
+        const { data: odoData } = await supabase
+          .from('odontogramas_sesion')
+          .select('*')
+          .eq('paciente_id', pacienteIdActual)
+          .order('fecha', { ascending: false });
+        if (odoData) setOdontogramasSesion(odoData);
+
       } catch (error) {
         console.error("Error al cargar datos:", error);
       } finally {
@@ -233,10 +244,21 @@ export default function AdminHistorial() {
   const handleGuardarNotaEvolucion = async (e) => {
     e.preventDefault(); 
 
-    if (!nuevaNota.diagnostico_cie10 || !nuevaNota.tratamiento || !nuevaNota.dentista_cop) {
-      alert("Debes completar Diagnóstico, Tratamiento y N° COP para cumplir con la normativa.");
+    if (!nuevaNota.diagnostico_cie10 || !nuevaNota.tratamiento) {
+      alert("Debes completar Diagnóstico y Tratamiento para guardar.");
       return;
     }
+
+    // Sincronizar prescripciones dinámicas → campo medicamentos (texto plano para la BD)
+    const prescripcionesTexto = (nuevaNota.prescripciones || [])
+      .filter(p => p.medicamento)
+      .map(p => `${p.medicamento} — ${p.dosis || 'según indicación'}`)
+      .join('\n');
+    const { prescripciones, dentista_cop, ...notaLimpia } = nuevaNota;
+    const notaParaGuardar = { 
+      ...notaLimpia, 
+      medicamentos: [prescripcionesTexto, nuevaNota.indicaciones].filter(Boolean).join('\n\n📋 INDICACIONES PARA CASA:\n') || nuevaNota.medicamentos,
+    };
 
     setGuardandoNota(true);
     try {
@@ -245,17 +267,69 @@ export default function AdminHistorial() {
         paciente_id: pacienteIdActual,
         fecha: fechaActual.toISOString().split('T')[0], 
         hora: fechaActual.toTimeString().split(' ')[0], 
-        ...nuevaNota
+        ...notaParaGuardar
       };
 
       const { error } = await supabase.from('notas_evolucion').insert([notaFinal]);
       if (error) throw error;
 
-      alert("¡Nota firmada y guardada con éxito!");
+      // 📄 Generar PDF con receta: datos del paciente + consultorio + indicaciones + prescripción
+      const doc = new jsPDF();
+      doc.setFontSize(20);
+      doc.setTextColor(0, 59, 92);
+      doc.text('Sonriendo Kids', 14, 22);
+      doc.setFontSize(10);
+      doc.setTextColor(120);
+      doc.text('Odontopediatría · sonriendokids.fun', 14, 29);
+      doc.setDrawColor(74, 107, 83);
+      doc.line(14, 33, 196, 33);
+      
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text('INDICACIONES PARA CASA', 14, 42);
+      
+      doc.setFontSize(11);
+      doc.setTextColor(60);
+      doc.text(`Paciente: ${hc.nombres || 'Paciente'}`, 14, 52);
+      doc.text(`Fecha: ${fechaActual.toLocaleDateString('es-PE')}`, 14, 59);
+      doc.text(`Doctora: Dra. Patricia Mora`, 14, 66);
+
+      let y = 78;
+      doc.setFontSize(12);
+      doc.setTextColor(0, 59, 92);
+      doc.text('Prescripción:', 14, y);
+      y += 8;
+      doc.setFontSize(11);
+      doc.setTextColor(40);
+      if (prescripcionesTexto) {
+        prescripcionesTexto.split('\n').forEach(linea => {
+          doc.text(`• ${linea}`, 18, y);
+          y += 7;
+        });
+      } else {
+        doc.text('(Sin medicamentos prescritos)', 18, y); y += 7;
+      }
+
+      if (nuevaNota.indicaciones) {
+        y += 6;
+        doc.setFontSize(12);
+        doc.setTextColor(0, 59, 92);
+        doc.text('Indicaciones para el hogar:', 14, y);
+        y += 8;
+        doc.setFontSize(11);
+        doc.setTextColor(40);
+        doc.text(doc.splitTextToSize(nuevaNota.indicaciones, 180), 14, y);
+        y += 10 * Math.ceil(nuevaNota.indicaciones.length / 90);
+      }
+
+      doc.save(`Receta_${(hc.nombres || 'Paciente').replace(/\s+/g, '_')}_${fechaActual.toISOString().slice(0,10)}.pdf`);
+
+      alert("¡Nota firmada y guardada! Se descargó la receta para casa.");
       
       setNuevaNota({
         motivo: '', examen_intraoral: '', diagnostico_cie10: '', 
         tratamiento: '', medicamentos: '', indicaciones: '', 
+        prescripciones: [{ medicamento: '', dosis: '' }],
         dentista_nombre: 'Dra. Patricia Mora',
         dentista_cop: nuevaNota.dentista_cop 
       });
@@ -266,19 +340,26 @@ export default function AdminHistorial() {
 
     } catch (error) {
       console.error(error);
-      alert("Error al guardar la nota.");
+      alert("Error al guardar la nota: " + (error.message || ''));
     } finally {
       setGuardandoNota(false);
     }
   }; 
 
-  const tabs = [
-    { id: 'filiacion', icon: 'person', label: '1. Filiación' },
+  // Lista de medicamentos para prescripción
+  const MEDICAMENTOS = [
+    'Amoxicilina', 'Ibuprofeno', 'Paracetamol', 'Azitromicina',
+    'Metronidazol', 'Naproxeno', 'Diclofenaco',
+    'Nistatina', 'Aciclovir', 'Lidocaína 2% con Epinefrina'
+  ];
+
+  const tabs = [    { id: 'filiacion', icon: 'person', label: '1. Filiación' },
     { id: 'anamnesis', icon: 'medical_information', label: '2. Anamnesis y Médicos' },
     { id: 'odontologicos', icon: 'dentistry', label: '3. Ant. Odontológicos' },
     { id: 'habitos', icon: 'child_care', label: '4. Hábitos e Higiene' },
     { id: 'examen', icon: 'stethoscope', label: '5. Examen Clínico' },
     { id: 'evolucion', icon: 'timeline', label: '6. Notas de Evolución' },
+    { id: 'proximacita', icon: 'event_upcoming', label: '7. Próxima Cita' },
   ];
 
   const procesarFinanzasOdontograma = async (carritoRecibido, totalMonto) => {
@@ -439,6 +520,11 @@ export default function AdminHistorial() {
                   placeholder="Dejar vacío si no toma medicamentos" rows={2}
                 />
                 <TextArea 
+                  label="¿Es alérgico a algún medicamento? ¿Cuál?" 
+                  name="alergia_medicamentos" value={hc.alergia_medicamentos || ''} onChange={handleChange} 
+                  placeholder="Ej. Penicilina, aspirina... Dejar vacío si no tiene alergias" rows={2}
+                />
+                <TextArea 
                   label="Hospitalizaciones o cirugías previas" 
                   name="hospitalizaciones" value={hc.hospitalizaciones} onChange={handleChange} 
                   placeholder="Motivo y fecha..." rows={2}
@@ -582,9 +668,18 @@ export default function AdminHistorial() {
 
               <OdontogramaInteractivo 
                 isOpen={modalOdontogramaAbierto} 
-                onClose={() => setModalOdontogramaAbierto(false)} 
+                pacienteId={pacienteIdActual}
+                onClose={() => {
+                  setModalOdontogramaAbierto(false);
+                  // Si venimos de confirmar presupuesto → saltar a Notas de Evolución
+                  if (irAEvolucionTrasConfirmar) {
+                    setIrAEvolucionTrasConfirmar(false);
+                    setPestañaActiva('evolucion');
+                  }
+                }} 
                 onGuardar={procesarFinanzasOdontograma}
                 carritoGuardado={hc.odontograma} 
+                onPresupuestoConfirmado={() => setIrAEvolucionTrasConfirmar(true)}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
@@ -647,6 +742,30 @@ export default function AdminHistorial() {
                       </div>
                     ))
                   )}
+
+                  {odontogramasSesion.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <h3 className="text-sm font-bold text-[#003B5C] mb-3 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-base">dentistry</span> Odontogramas y Presupuestos guardados
+                      </h3>
+                      <div className="space-y-2">
+                        {odontogramasSesion.map((o) => (
+                          <div key={o.id} className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex justify-between items-center gap-3">
+                            <div className="text-sm">
+                              <span className="font-bold text-[#003B5C]">{o.fecha}</span>
+                              <span className="text-gray-500 ml-2">Total: S/ {o.monto_total}</span>
+                            </div>
+                            {o.pdf_url && (
+                              <a href={o.pdf_url} target="_blank" rel="noopener noreferrer"
+                                className="text-xs bg-[#003B5C] text-white px-3 py-1.5 rounded-lg font-bold hover:bg-[#002a42]">
+                                Ver PDF
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -672,13 +791,65 @@ export default function AdminHistorial() {
                     </div>
 
                     <TextArea label="Tratamiento Ejecutado Hoy" name="tratamiento" onChange={handleNotaChange} value={nuevaNota.tratamiento} required />
-                    <TextArea label="Prescripción (Fármaco, dosis, frecuencia)" name="medicamentos" onChange={handleNotaChange} value={nuevaNota.medicamentos} placeholder="Opcional. Ej. Amoxicilina 500mg..." />
+                    
+                    {/* Prescripción dinámica: select de medicamento + dosis, filas agregables */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-[#003B5C] mb-1">Prescripción (Medicamento + dosis)</label>
+                      {nuevaNota.prescripciones?.map((p, i) => (
+                        <div key={i} className="flex gap-2 items-start">
+                          <select
+                            value={p.medicamento}
+                            onChange={(e) => {
+                              const nuevas = [...(nuevaNota.prescripciones || [])];
+                              nuevas[i] = { ...nuevas[i], medicamento: e.target.value };
+                              setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
+                            }}
+                            className="flex-1 px-3 py-2 rounded-lg border bg-white text-sm"
+                          >
+                            <option value="">-- Seleccione medicamento --</option>
+                            {MEDICAMENTOS.map(m => <option key={m} value={m}>{m}</option>)}
+                          </select>
+                          <input
+                            type="text"
+                            placeholder="Cantidad y gramaje (Ej. 500mg c/8h x 5 días)"
+                            value={p.dosis}
+                            onChange={(e) => {
+                              const nuevas = [...(nuevaNota.prescripciones || [])];
+                              nuevas[i] = { ...nuevas[i], dosis: e.target.value };
+                              setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
+                            }}
+                            className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:border-[#003B5C]"
+                          />
+                          {(nuevaNota.prescripciones?.length > 1) && (
+                            <button type="button" onClick={() => {
+                              const nuevas = [...(nuevaNota.prescripciones || [])];
+                              nuevas.splice(i, 1);
+                              setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
+                            }} className="p-2 text-red-400 hover:text-red-600">
+                              <span className="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setNuevaNota({ ...nuevaNota, prescripciones: [...(nuevaNota.prescripciones || [{medicamento:'',dosis:''}]), {medicamento:'',dosis:''}] })}
+                        className="mt-1 flex items-center gap-1 text-sm font-bold text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg border border-green-200 transition-all"
+                      >
+                        <span className="material-symbols-outlined text-base">add_circle</span> Agregar medicamento
+                      </button>
+                    </div>
+
+                    {/* Campo oculto que sincroniza las prescripciones al campo medicamentos (texto plano para la BD) */}
+                    <input type="hidden" name="medicamentos" value={
+                      (nuevaNota.prescripciones || [])
+                        .filter(p => p.medicamento)
+                        .map(p => `${p.medicamento} — ${p.dosis || 'según indicación'}`)
+                        .join('\n')
+                    } onChange={() => {}} />
+
                     <TextArea label="Indicaciones para el hogar" name="indicaciones" onChange={handleNotaChange} value={nuevaNota.indicaciones} placeholder="Opcional." />
                     
-                    <div className="col-span-1 md:col-span-2 grid grid-cols-2 gap-4 border-t border-green-200 pt-4">
-                      <Input label="Firma del Profesional" name="dentista_nombre" onChange={handleNotaChange} value={nuevaNota.dentista_nombre} required />
-                      <Input label="Número COP / RNE" name="dentista_cop" onChange={handleNotaChange} value={nuevaNota.dentista_cop} placeholder="Ej. 12345" required />
-                    </div>
                   </div>
 
                   <button 
@@ -692,7 +863,27 @@ export default function AdminHistorial() {
                   <p className="text-[10px] text-center text-gray-400 mt-2">Al guardar, este registro se bloquea y no podrá ser modificado según normativa del MINSA.</p>
                 </form>
               </div>
+            </div>
+          )}
 
+          {pestañaActiva === 'proximacita' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <h2 className="text-lg font-bold text-[#003B5C] mb-4 flex items-center gap-2 border-b pb-3">
+                  <span className="material-symbols-outlined">info</span> Sobre esta sección
+                </h2>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Programa aquí la <strong>próxima visita</strong> del paciente. El sistema enviará
+                  recordatorios automáticos al apoderado en 3 momentos:
+                </p>
+                <ul className="mt-4 space-y-3 text-sm text-gray-700">
+                  <li className="flex items-center gap-3"><span className="bg-blue-100 rounded-lg p-2 material-symbols-outlined text-[#003B5C]">calendar_month</span> 1 <strong>semana</strong> antes de la cita</li>
+                  <li className="flex items-center gap-3"><span className="bg-yellow-100 rounded-lg p-2 material-symbols-outlined text-amber-600">schedule</span> 1 <strong>día</strong> antes de la cita</li>
+                  <li className="flex items-center gap-3"><span className="bg-green-100 rounded-lg p-2 material-symbols-outlined text-green-600">notifications_active</span> 3 <strong>horas</strong> antes de la cita</li>
+                </ul>
+                <p className="text-xs text-gray-400 mt-4">Los recordatorios se envían por WhatsApp y correo electrónico según lo que actives.</p>
+              </div>
+              <ProximaCita pacienteId={pacienteIdActual} />
             </div>
           )}
 

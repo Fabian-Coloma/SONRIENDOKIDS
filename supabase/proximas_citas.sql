@@ -1,0 +1,25 @@
+-- Tabla próximas_citas: citas programadas por la doctora desde "Próxima Cita"
+-- con recordatorios automáticos (1 semana / 1 día / 3 horas) por WSPP y correo
+
+create table if not exists proximas_citas (
+  id uuid primary key default gen_random_uuid(),
+  paciente_id uuid not null references pacientes(id) on delete cascade,
+  fecha date not null,
+  hora time not null,
+  motivo text,
+  notas text,
+  notificar_whatsapp boolean default true,
+  notificar_email boolean default true,
+  -- control de recordatorios enviados (evita duplicados)
+  rec_semana_wspp boolean default false,
+  rec_semana_email boolean default false,
+  rec_dia_wspp boolean default false,
+  rec_dia_email boolean default false,
+  rec_hora_wspp boolean default false,
+  rec_hora_email boolean default false,
+  created_at timestamptz default now()
+);
+
+alter table proximas_citas enable row level security;
+drop policy if exists "proximas_citas service all" on proximas_citas;
+create policy "proximas_citas service all" on proximas_citas for all using (true) with check (true);

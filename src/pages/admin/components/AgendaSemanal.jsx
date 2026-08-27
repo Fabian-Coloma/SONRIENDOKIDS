@@ -1,6 +1,6 @@
 
 // IMPORTANTE: Asegúrate de pasar 'onCambiarFecha' desde tu componente padre (AdminCitas)
-const AgendaSemanal = ({ citas, fechaBase, onCambiarFecha, onAgendarClick, onVerDetalle, onMoverCita }) => {
+const AgendaSemanal = ({ citas, fechaBase, onCambiarFecha, onAgendarClick, onVerDetalle, onMoverCita, onEliminar }) => {
   const horas = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
   
   // Solución de zona horaria: Agregamos T00:00:00 para que JavaScript no desface el día en LATAM
@@ -147,6 +147,17 @@ const AgendaSemanal = ({ citas, fechaBase, onCambiarFecha, onAgendarClick, onVer
                           {cita.estado_pago === 'Debe' && <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full shadow-sm" title="Debe"></div>}
                           {cita.estado_pago === 'Falta pagar' && <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-yellow-400 rounded-full shadow-sm" title="Falta pagar"></div>}
                           {cita.estado_pago === 'Pagado' && <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full shadow-sm" title="Pagado"></div>}
+                          
+                          {/* Botón X para eliminar cita */}
+                          {onEliminar && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onEliminar(cita.id); }}
+                              title="Eliminar cita"
+                              className="absolute -top-2 -right-2 w-5 h-5 bg-white border border-gray-300 rounded-full text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 flex items-center justify-center shadow-md transition-all z-10"
+                            >
+                              <span className="text-[10px] font-black leading-none">✕</span>
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <div 

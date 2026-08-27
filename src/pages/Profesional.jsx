@@ -140,12 +140,14 @@ const Profesional = () => {
             <div className="lg:w-1/2 space-y-8">
               
               <div>
-                <h2 className="text-4xl lg:text-5xl font-black text-[#6b584a] mb-2 flex items-center gap-3">
+                <h2 className="text-4xl lg:text-5xl font-black text-[#6b584a] mb-2 text-center">
                   Dra. Patty Mora <span className="animate-swing origin-bottom inline-block">👋</span>
                 </h2>
-                <h3 className="text-xl lg:text-2xl text-[#4a6b53] font-black inline-block bg-white px-5 py-2 rounded-full border-2 border-[#4a6b53] shadow-sm transform -rotate-1">
-                  Odontopediatra & Ortodoncista
-                </h3>
+                <div className="text-center">
+                  <h3 className="text-xl lg:text-2xl text-[#4a6b53] font-black inline-block bg-white px-5 py-2 rounded-full border-2 border-[#4a6b53] shadow-sm transform -rotate-1">
+                    Odontopediatra
+                  </h3>
+                </div>
               </div>
 
               <div className="space-y-4 text-gray-600 font-bold text-lg leading-relaxed">
@@ -170,7 +172,7 @@ const Profesional = () => {
                 </li>
                 <li className="flex items-center gap-3 text-[#6b584a] font-black group cursor-default">
                   <span className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl border-2 border-[#eaf4ed] group-hover:scale-110 group-hover:border-[#4a6b53] transition-all shadow-sm">🦷</span>
-                  Ortodoncia preventiva
+                  Diagnóstico de ortodoncia preventiva
                 </li>
                 <li className="flex items-center gap-3 text-[#6b584a] font-black group cursor-default">
                   <span className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl border-2 border-[#eaf4ed] group-hover:scale-110 group-hover:border-[#4a6b53] transition-all shadow-sm">✨</span>

@@ -1,19 +1,25 @@
 import { useState, useEffect } from 'react';
 import Diente from './Diente';
+import { CATALOGO_PROCEDIMIENTOS } from './catalogoProcedimientos';
+import { supabase } from '../../supabase';
 
-const CATÁLOGO_PROCEDIMIENTOS = [
-  { id: 1, nombre: 'Caries (Resina)', precio: 80 },
-  { id: 2, nombre: 'Sellante', precio: 50 },
-  { id: 3, nombre: 'Profilaxis', precio: 60 },
-  { id: 4, nombre: 'Pulpotomía', precio: 150 },
-  { id: 5, nombre: 'Corona de Acero', precio: 200 },
-  { id: 6, nombre: 'Extracción', precio: 70 },
-];
-
-export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, carritoGuardado = [] }) {
+export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, carritoGuardado = [], onPresupuestoConfirmado, pacienteId }) {
   const [carrito, setCarrito] = useState([]);
   const [modalProc, setModalProc] = useState({ abierto: false, diente: null, cara: null });
+  const [modalConsentimiento, setModalConsentimiento] = useState(false);
+  const [consentimientoSeleccionado, setConsentimientoSeleccionado] = useState('');
   const [procedimientoSeleccionado, setProcedimientoSeleccionado] = useState('');
+  // Catálogo: por defecto el local; si existe la tabla 'precios' en Supabase, usa esa
+  const [catalogo, setCatalogo] = useState(CATALOGO_PROCEDIMIENTOS);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.from('precios').select('*').order('id');
+        if (data && data.length > 0) setCatalogo(data);
+      } catch { /* tabla aún no creada → usa catálogo local */ }
+    })();
+  }, []);
 
  useEffect(() => {
     if (isOpen) {
@@ -36,6 +42,12 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
 
   if (!isOpen) return null;
 
+  // Dientes deciduos (niño): 51-65 y 71-85 → solo General + Niño
+  const esDienteNino = (num) => (num >= 51 && num <= 65) || (num >= 71 && num <= 85);
+  const catalogoFiltrado = modalProc.diente != null && esDienteNino(modalProc.diente)
+    ? catalogo.filter(p => p.categoria === 'General' || p.categoria === 'Niño')
+    : catalogo.filter(p => p.categoria === 'General' || p.categoria === 'Permanente');
+
   const abrirModalProcedimiento = (diente, cara) => {
     setProcedimientoSeleccionado('');
     setModalProc({ abierto: true, diente, cara });
@@ -45,7 +57,7 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
   const agregarProcedimiento = () => {
     if (!procedimientoSeleccionado) return;
     
-    const procedData = CATÁLOGO_PROCEDIMIENTOS.find(p => p.nombre === procedimientoSeleccionado);
+    const procedData = catalogo.find(p => p.nombre === procedimientoSeleccionado);
     
     setCarrito(prevCarrito => [
       ...prevCarrito, 
@@ -71,6 +83,76 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
   const handleGuardarFinanzas = () => {
     onGuardar(carrito, totalProforma);
     onClose(); 
+  };
+
+  // Confirmar presupuesto: registra el pago como ingreso en finanzas_ingresos
+  const confirmarPresupuesto = async () => {
+    try {
+      const concepto = carrito.map(c => c.procedimiento).join(' + ');
+      const { error } = await supabase.from('finanzas_ingresos').insert([{
+        concepto: `Presupuesto confirmado — ${concepto}`.slice(0, 200),
+        monto: totalProforma,
+        fecha: new Date().toISOString().slice(0, 10),
+        metodo_pago: 'Efectivo',
+      }]);
+      if (error) throw error;
+      // Abre modal de consentimientos (el carrito ya se guardó vía onGuardar)
+      setConsentimientoSeleccionado('');
+      setModalConsentimiento(true);
+    } catch (e) {
+      console.error('Error registrando ingreso:', e);
+      alert('Hubo un problema registrando el ingreso, pero puedes reintentarlo.');
+    }
+  };
+
+  // Al imprimir el consentimiento:
+  // 1) guarda el PDF del odontograma (piezas + monto) en Supabase,
+  // 2) cierra modales + odontograma y navega a Notas de Evolución
+  const imprimirConsentimiento = async (e) => {
+    if (!consentimientoSeleccionado) { e.preventDefault(); return; }
+
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF();
+    doc.setFontSize(20); doc.setTextColor(0, 59, 92);
+    doc.text('Sonriendo Kids', 14, 22);
+    doc.setFontSize(10); doc.setTextColor(120);
+    doc.text('Odontopediatría · sonriendokids.fun', 14, 29);
+    doc.setDrawColor(74, 107, 83); doc.line(14, 33, 196, 33);
+    doc.setFontSize(14); doc.setTextColor(0);
+    doc.text('ODONTOGRAMA Y PRESUPUESTO', 14, 42);
+    doc.setFontSize(11); doc.setTextColor(60);
+    doc.text(`Fecha: ${new Date().toLocaleDateString('es-PE')}`, 14, 52);
+    let y = 64;
+    doc.setFontSize(12); doc.setTextColor(0, 59, 92);
+    doc.text('Tratamientos:', 14, y); y += 8;
+    doc.setFontSize(11); doc.setTextColor(40);
+    carrito.forEach(item => {
+      doc.text(`Pieza ${item.diente} (${item.cara}) - ${item.procedimiento}: S/ ${item.precio}`, 18, y);
+      y += 7;
+    });
+    y += 4;
+    doc.setFontSize(14); doc.setTextColor(0, 59, 92);
+    doc.text(`TOTAL: S/ ${totalProforma}`, 14, y);
+
+    const pdfBlob = doc.output('blob');
+    const fileName = `odontograma_${Date.now()}.pdf`;
+    const { data: up } = await supabase.storage.from('odontogramas').upload(`sesiones/${fileName}`, pdfBlob, { contentType: 'application/pdf', upsert: true }).catch(() => ({ data: null }));
+    let pdfUrl = null;
+    if (up) {
+      pdfUrl = supabase.storage.from('odontogramas').getPublicUrl(`sesiones/${fileName}`).data.publicUrl;
+      // Guardamos el registro en la tabla para "Historial de Visitas"
+      await supabase.from('odontogramas_sesion').insert([{
+        paciente_id: pacienteId,
+        fecha: new Date().toISOString().slice(0, 10),
+        monto_total: totalProforma,
+        detalle: carrito,
+        pdf_url: pdfUrl
+      }]).catch(() => {});
+    }
+    // notificar al padre que cierre odontograma y salte a evolución
+    if (onPresupuestoConfirmado) onPresupuestoConfirmado();
+    setModalConsentimiento(false);
+    onClose();
   };
 
   return (
@@ -172,6 +254,12 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
               <button onClick={handleGuardarFinanzas} disabled={carrito.length === 0} className="w-full py-3 rounded-xl text-white bg-green-600 hover:bg-green-700 font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-md">
                 <span className="material-symbols-outlined">save</span> Guardar y Enviar PDF
               </button>
+
+              <button onClick={confirmarPresupuesto}
+                disabled={carrito.length === 0}
+                className="w-full py-3 rounded-xl text-white bg-[#f4a261] hover:bg-[#e76f51] font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-md">
+                <span className="material-symbols-outlined">verified</span> Confirmar Presupuesto
+              </button>
             </div>
           </div>
         </div>
@@ -190,14 +278,84 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
               className="w-full px-3 py-2 border border-gray-300 rounded-xl mb-6 outline-none focus:border-[#003B5C] bg-gray-50 text-sm"
             >
               <option value="">-- Elija una opción --</option>
-              {CATÁLOGO_PROCEDIMIENTOS.map(p => (
-                <option key={p.id} value={p.nombre}>{p.nombre} (S/ {p.precio})</option>
+              {['General', 'Niño', 'Permanente']
+                .filter(cat => catalogoFiltrado.some(p => p.categoria === cat))
+                .map(cat => (
+                <optgroup key={cat} label={`── ${cat} ──`}>
+                  {catalogoFiltrado.filter(p => p.categoria === cat).map(p => (
+                    <option key={p.id} value={p.nombre}>{p.nombre} — S/ {p.precio}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
 
             <div className="flex gap-2">
               <button onClick={() => setModalProc({ abierto: false })} className="flex-1 py-2 rounded-xl text-gray-600 bg-gray-100 font-bold hover:bg-gray-200 text-sm">Cancelar</button>
               <button onClick={agregarProcedimiento} disabled={!procedimientoSeleccionado} className="flex-1 py-2 rounded-xl text-white bg-[#003B5C] font-bold disabled:opacity-50 text-sm">Agregar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de consentimientos — aparece al confirmar presupuesto */}
+      {modalConsentimiento && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-[420px] shadow-2xl">
+            <h3 className="text-lg font-black text-[#003B5C] mb-1 flex items-center gap-2">
+              <span className="material-symbols-outlined">history_edu</span> Consentimientos Informados
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Presupuesto confirmado por <strong>S/ {totalProforma}</strong> ✅ Se registró en Finanzas.
+              Ahora descarga el consentimiento según el tratamiento realizado:
+            </p>
+
+            <div className="space-y-2 mb-5">
+              {[
+                { id: 'pulpar', nombre: 'Tratamiento Pulpar (Endodoncia)', archivo: '/consentimientos/CONSENTIMIENTO TTO PULPAR.docx', emoji: '🦷' },
+                { id: 'curaciones', nombre: 'Curaciones / Obturaciones', archivo: '/consentimientos/CONSENTIMIENTO CURACIONES.docx', emoji: '✨' },
+                { id: 'exodoncias', nombre: 'Exodoncias / Cirugía Oral', archivo: '/consentimientos/CONSENTIMIENTO EXODONCIAS.docx', emoji: '🔧' },
+                { id: 'ortodoncia', nombre: 'Ortodoncia', archivo: '/consentimientos/Ortodoncia.pdf', emoji: '📏' },
+              ].map(c => (
+                <label key={c.id}
+                  className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                    consentimientoSeleccionado === c.id
+                      ? 'border-[#003B5C] bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'}`}>
+                  <input type="radio" name="consentimiento" value={c.id}
+                    checked={consentimientoSeleccionado === c.id}
+                    onChange={() => setConsentimientoSeleccionado(c.id)}
+                    className="accent-[#003B5C] w-4 h-4" />
+                  <span className="text-xl">{c.emoji}</span>
+                  <span className="text-sm font-bold text-gray-700">{c.nombre}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={() => setModalConsentimiento(false)}
+                className="flex-1 py-2.5 rounded-xl text-gray-600 bg-gray-100 font-bold hover:bg-gray-200 text-sm">
+                Cerrar
+              </button>
+              <a
+                href={(() => {
+                  const c = [
+                    { id: 'pulpar', archivo: '/consentimientos/CONSENTIMIENTO TTO PULPAR.docx' },
+                    { id: 'curaciones', archivo: '/consentimientos/CONSENTIMIENTO CURACIONES.docx' },
+                    { id: 'exodoncias', archivo: '/consentimientos/CONSENTIMIENTO EXODONCIAS.docx' },
+                    { id: 'ortodoncia', archivo: '/consentimientos/Ortodoncia.pdf' },
+                  ].find(c => c.id === consentimientoSeleccionado);
+                  return c ? c.archivo : undefined;
+                })()}
+                download
+                onClick={(e) => {
+                  if (!consentimientoSeleccionado) { e.preventDefault(); return; }
+                  // Cierra modal + odontograma y navega a Notas de Evolución
+                  setTimeout(() => imprimirConsentimiento(e), 300);
+                }}
+                className={`flex-1 py-2.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-1 ${
+                  consentimientoSeleccionado ? 'bg-[#003B5C] hover:bg-[#002a42]' : 'bg-gray-300 pointer-events-none'}`}>
+                <span className="material-symbols-outlined text-base">download</span> Imprimir
+              </a>
             </div>
           </div>
         </div>

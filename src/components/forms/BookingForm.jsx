@@ -7,6 +7,7 @@ const BookingForm = () => {
     nombrePadre: '',
     nombreNino: '',
     telefono: '',
+    correo: '',
     motivo: '',
     fechaPropuesta: '',
     horaPropuesta: ''
@@ -20,12 +21,15 @@ const BookingForm = () => {
   const [cargandoHorarios, setCargandoHorarios] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
-  // Horarios de atención
+  // --- LÓGICA DE HORARIOS (date picker + botones) ---
+  // Horarios en pantalla: 10:00 - 20:00 (cada 1 hora)
   const horariosAtencion = [
-    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
-    "12:00", "12:30", "14:00", "14:30", "15:00", "15:30", 
-    "16:00", "16:30", "17:00", "17:30"
+    "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
+    "16:00", "17:00", "18:00", "19:00", "20:00"
   ];
+  // Días que SÍ atienden (libres): mar (2) y mié (3)
+  const DIAS_LIBRES = [2, 3];
+  const HORA_LIBRE_INICIO = 11; // mar/mié libres desde las 11:00
 
   // --- LÓGICA DE LA MÁSCARA Y EDAD ---
   const handleFechaChange = (e) => {
@@ -74,14 +78,8 @@ const BookingForm = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
 
-    // Si cambia la fecha de reserva, buscamos la disponibilidad
-    if (name === 'fechaPropuesta') {
-      if (value) {
-        consultarDisponibilidad(value);
-      } else {
-        setHorariosOcupados([]);
-      }
-    }
+    // NOTA: la lógica de ocupados por día se calcula en el onChange del date picker.
+    // No consultamos BD aquí para no pisar esa lógica.
   };
 
   const consultarDisponibilidad = async (fecha) => {
@@ -109,11 +107,27 @@ const BookingForm = () => {
     setFormData({ ...formData, horaPropuesta: hora });
   };
 
+  // Calcula la próxima fecha real (YYYY-MM-DD) para un día de la semana dado
+  const calcularFechaProxima = (diaKey) => {
+    const hoy = new Date();
+    const resultado = new Date(hoy);
+    let diasSumar = (diaKey - hoy.getDay() + 7) % 7;
+    if (diasSumar === 0) diasSumar = 7; // si es hoy, ir a la próxima semana
+    resultado.setDate(hoy.getDate() + diasSumar);
+    return resultado.toISOString().slice(0, 10);
+  };
+
+  // Al hacer clic en una celda disponible: fija día + hora
+  const seleccionarCelda = (diaKey, hora) => {
+    const fecha = calcularFechaProxima(diaKey);
+    setFormData({ ...formData, fechaPropuesta: fecha, horaPropuesta: hora });
+  };
+
   // --- NUEVA LÓGICA: ENVÍO DE CORREO A LA DOCTORA ---
   const notificarAlConsultorio = async () => {
     const { data, error } = await supabase.functions.invoke('enviar-correo', {
       body: {
-        to: 'fabianaca17123@gmail.com', // ⚠️ CAMBIA ESTO POR TU CORREO
+        to: 'sonriendo.contacto@gmail.com', // correo de la Doctora Patricia
         subject: '🦷 ¡Nueva Reserva de Cita desde la Web!',
         html: `
           <h2>Nueva Cita Recibida</h2>
@@ -122,6 +136,7 @@ const BookingForm = () => {
             <li><strong>Paciente:</strong> ${formData.nombreNino} (${edadCalculada} años)</li>
             <li><strong>Apoderado:</strong> ${formData.nombrePadre}</li>
             <li><strong>WhatsApp:</strong> ${formData.telefono}</li>
+            <li><strong>Correo:</strong> ${formData.correo || 'No indicado'}</li>
             <li><strong>Motivo:</strong> ${formData.motivo}</li>
             <li><strong>Fecha:</strong> ${formData.fechaPropuesta}</li>
             <li><strong>Hora:</strong> ${formData.horaPropuesta}</li>
@@ -146,6 +161,15 @@ const BookingForm = () => {
       return;
     }
 
+    // Validación de seguridad: solo mar/mié 11:00-20:00
+    if (formData.fechaPropuesta) {
+      const dia = new Date(formData.fechaPropuesta + 'T12:00:00').getDay();
+      const hh = parseInt(formData.horaPropuesta.slice(0, 2), 10);
+      if (!DIAS_LIBRES.includes(dia) || hh < HORA_LIBRE_INICIO) {
+        alert("Ese horario ya no está disponible. Por favor elige uno de los turnos resaltados.");
+        return;
+      }
+    }
     if (edadCalculada === '' || edadCalculada === 'Revisar fecha') {
       alert("Por favor, ingresa una fecha de nacimiento válida (DD/MM/AAAA).");
       return;
@@ -165,8 +189,9 @@ const BookingForm = () => {
             nombre_nino: formData.nombreNino,
             nombre_apoderado: formData.nombrePadre,
             whatsapp: formData.telefono,
+            correo: formData.correo || null,
             fecha_nacimiento: fechaFormateadaParaBD, 
-            edad: parseInt(edadCalculada, 10)         
+            edad: parseInt(edadCalculada, 10)        
           }
         ])
         .select() 
@@ -302,21 +327,39 @@ const BookingForm = () => {
             </div>
           </div>
 
+          <div className="space-y-2 group">
+            <label className="text-sm font-bold text-[#6b584a] ml-2">Motivo de Consulta</label>
+            <select name="motivo" required value={formData.motivo} className="w-full px-5 py-3 rounded-2xl border-2 border-[#e3d1c3] bg-white text-gray-700 focus:border-sonriendo-teal focus:ring-4 focus:ring-sonriendo-teal/10 outline-none transition-all duration-300 cursor-pointer font-medium" onChange={handleChange}>
+              <option value="">Selecciona...</option>
+              <option value="Primera visita / Evaluación">Primera visita / Evaluación</option>
+              <option value="Tratamiento de caries">Tratamiento de caries</option>
+              <option value="Ortodoncia Infantil">Ortodoncia Infantil</option>
+              <option value="Limpieza y Flúor">Limpieza y Flúor</option>
+              <option value="Emergencia">Emergencia</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2 group">
-              <label className="text-sm font-bold text-[#6b584a] ml-2">Motivo de Consulta</label>
-              <select name="motivo" required value={formData.motivo} className="w-full px-5 py-3 rounded-2xl border-2 border-[#e3d1c3] bg-white text-gray-700 focus:border-sonriendo-teal focus:ring-4 focus:ring-sonriendo-teal/10 outline-none transition-all duration-300 cursor-pointer font-medium" onChange={handleChange}>
-                <option value="">Selecciona...</option>
-                <option value="Primera visita / Evaluación">Primera visita / Evaluación</option>
-                <option value="Tratamiento de caries">Tratamiento de caries</option>
-                <option value="Ortodoncia Infantil">Ortodoncia Infantil</option>
-                <option value="Limpieza y Flúor">Limpieza y Flúor</option>
-                <option value="Emergencia">Emergencia</option>
-              </select>
+              <label className="text-sm font-bold text-[#6b584a] ml-2">Día de la Cita</label>
+              <input type="date" name="fechaPropuesta" required value={formData.fechaPropuesta} className="w-full px-5 py-3 rounded-2xl border-2 border-[#e3d1c3] bg-white text-gray-700 focus:border-sonriendo-teal focus:ring-4 focus:ring-sonriendo-teal/10 outline-none transition-all duration-300 cursor-pointer font-medium" min={new Date().toISOString().slice(0,10)} onChange={(e) => {
+                const f = e.target.value;
+                if (!f) { handleChange(e); setHorariosOcupados([]); return; }
+                const dia = new Date(f + 'T12:00:00').getDay();
+                const esLibre = DIAS_LIBRES.includes(dia);
+                const ocupados = horariosAtencion.filter(h => {
+                  const hh = parseInt(h.slice(0, 2), 10);
+                  if (!esLibre) return true;
+                  if (hh < HORA_LIBRE_INICIO) return true;
+                  return false;
+                });
+                setHorariosOcupados(ocupados);
+                handleChange(e);
+              }} />
             </div>
             <div className="space-y-2 group">
-              <label className="text-sm font-bold text-[#6b584a] ml-2">Día de la Cita</label>
-              <input type="date" name="fechaPropuesta" required value={formData.fechaPropuesta} className="w-full px-5 py-3 rounded-2xl border-2 border-[#e3d1c3] bg-white text-gray-700 focus:border-sonriendo-teal focus:ring-4 focus:ring-sonriendo-teal/10 outline-none transition-all duration-300 cursor-pointer font-medium" onChange={handleChange} />
+              <label className="text-sm font-bold text-[#6b584a] ml-2">Correo electrónico</label>
+              <input type="email" name="correo" value={formData.correo} placeholder="Ej. familia@correo.com" className="w-full px-5 py-3 rounded-2xl border-2 border-[#e3d1c3] bg-white text-gray-700 focus:border-sonriendo-teal focus:ring-4 focus:ring-sonriendo-teal/10 outline-none transition-all duration-300 font-medium" onChange={handleChange} />
             </div>
           </div>
 
@@ -325,9 +368,7 @@ const BookingForm = () => {
               {formData.fechaPropuesta ? 'Selecciona una hora disponible:' : 'Elige un día para ver las horas disponibles'}
             </label>
             
-            {cargandoHorarios ? (
-              <div className="text-center py-4 text-sonriendo-teal font-medium animate-pulse">Consultando agenda...</div>
-            ) : formData.fechaPropuesta ? (
+            {formData.fechaPropuesta ? (
               <div className="grid grid-cols-4 gap-3">
                 {horariosAtencion.map((hora) => {
                   const ocupado = horariosOcupados.includes(hora);
