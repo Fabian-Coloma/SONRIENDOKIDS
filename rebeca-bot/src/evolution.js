@@ -28,13 +28,11 @@ export async function configurarWebhook() {
   const botUrl = process.env.BOT_URL || process.env.RENDER_EXTERNAL_URL;
   if (!botUrl) return;
   try {
+    // Formato Evolution v1.8.2: body plano (sin envolver en "webhook")
     await api("POST", `/webhook/set/${INSTANCE}`, {
-      webhook: {
-        enabled: true,
-        url: `${botUrl}/webhook`,
-        events: ["MESSAGES_UPSERT"],
-        webhook_by_events: false,
-      },
+      url: `${botUrl}/webhook`,
+      webhook_by_events: false,
+      events: ["MESSAGES_UPSERT"],
     });
     console.log("🔗 Webhook de Evolution configurado →", `${botUrl}/webhook`);
   } catch (e) {
