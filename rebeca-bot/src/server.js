@@ -1,7 +1,7 @@
 import express from "express";
 import "dotenv/config";
 import { rebeca, horasOcupadas, agendarCita } from "./ia.js";
-import { enviarTexto, configurarWebhook } from "./evolution.js";
+import { enviarTexto, configurarWebhook, asegurarInstancia } from "./evolution.js";
 import { agregar, getHistorial, limpiar } from "./memoria.js";
 import { revisarRecordatorios } from "./recordatorios.js";
 
@@ -65,7 +65,8 @@ app.post("/webhook", async (req, res) => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`✅ Rebeca escuchando en :${PORT}`);
-  configurarWebhook(); // re-arma el webhook por si Evolution lo perdió al reiniciar
+  asegurarInstancia();   // crea/reconecta la instancia si Evolution la perdió al reiniciar
+  configurarWebhook();   // re-arma el webhook por si Evolution lo perdió al reiniciar
 });
 
 // 🔄 Keep-alive: evita que Render FREE duerma el bot y Evolution tras 15 min de inactividad.
