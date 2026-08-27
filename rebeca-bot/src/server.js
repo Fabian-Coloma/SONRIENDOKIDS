@@ -3,6 +3,7 @@ import "dotenv/config";
 import { rebeca, horasOcupadas, agendarCita } from "./ia.js";
 import { enviarTexto, configurarWebhook } from "./evolution.js";
 import { agregar, getHistorial, limpiar } from "./memoria.js";
+import { revisarRecordatorios } from "./recordatorios.js";
 
 const app = express();
 app.use(express.json());
@@ -82,6 +83,14 @@ setInterval(async () => {
     console.error("keep-alive error:", e.message);
   }
 }, KEEPALIVE_MS);
+
+// 🔔 Recordatorios: revisa citas 1 día y 3 horas antes, por WhatsApp y correo.
+// Se ejecuta al arrancar y luego cada hora.
+const RECORDATORIOS_MS = 60 * 60 * 1000; // 1 hora
+revisarRecordatorios().catch((e) => console.error("recordatorios iniciales:", e.message));
+setInterval(() => {
+  revisarRecordatorios().catch((e) => console.error("recordatorios:", e.message));
+}, RECORDATORIOS_MS);
 
 // Ping inmediato al arrancar para despertar Evolution de una vez
 fetch(EVOLUTION_URL).catch(() => {});
