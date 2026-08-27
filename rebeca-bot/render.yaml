@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: rebeca-bot
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: EVOLUTION_URL
+        value: "https://evolution-9z0r.onrender.com"
+      - key: BOT_URL
+        value: "https://rebeca-bot.onrender.com"
+      # Las siguientes deben estar ya en Render (no se guardan aquí por seguridad):
+      # EVOLUTION_API_KEY, EVOLUTION_INSTANCE, SUPABASE_URL, SUPABASE_SERVICE_KEY, GEMINI_API_KEY
