@@ -8,7 +8,12 @@ import { revisarRecordatorios } from "./recordatorios.js";
 const app = express();
 app.use(express.json());
 
+// Endpoint de diagnóstico: muestra la última respuesta generada por Rebeca (para verificar que funciona)
+let ultimaRespuesta = null;
+let ultimoError = null;
+
 app.get("/", (_req, res) => res.json({ ok: true, bot: "Rebeca · Sonriendo Kids" }));
+app.get("/ultima", (_req, res) => res.json({ ok: true, ultimaRespuesta, ultimoError }));
 
 app.post("/webhook", async (req, res) => {
   res.sendStatus(200); // responder rápido a Evolution
@@ -72,9 +77,11 @@ app.post("/webhook", async (req, res) => {
     } catch { /* era texto normal */ }
 
     agregar(telefono, "model", respuesta);
+    ultimaRespuesta = { telefono, texto, respuesta: respuesta.slice(0, 200), hora: new Date().toISOString() };
     await enviarTexto(telefono, respuesta);
     console.log(`📤 → ${telefono}: ${respuesta.slice(0, 80)}...`);
   } catch (e) {
+    ultimoError = { mensaje: e.message, hora: new Date().toISOString() };
     console.error("Webhook error:", e);
   }
 });
