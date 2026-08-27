@@ -14,11 +14,28 @@ app.post("/webhook", async (req, res) => {
   res.sendStatus(200); // responder rápido a Evolution
 
   try {
-    if (req.body?.event !== "messages.upsert") return;
+    // Evolution v1.8.2 envía el evento en MAYÚSCULAS (MESSAGES_UPSERT); versiones nuevas en minúsculas.
+    const ev = req.body?.event || req.body?.data?.event;
+    if (ev !== "MESSAGES_UPSERT" && ev !== "messages.upsert") {
+      console.log("⏭️ Evento ignorado:", ev);
+      return;
+    }
     const msg = req.body.data;
     if (msg.key?.fromMe || msg.key?.remoteJid?.includes("@g.us")) return;
 
-    const telefono = msg.key.remoteJid.split("@")[0];
+    // Evolution v1.8.2 entrega remoteJid como LID (12345@lid) que NO es enviabl.
+    // Convertimos con LID_MAP (env) cuando aplique.
+    const lidMap = {};
+    try { Object.assign(lidMap, JSON.parse(process.env.LID_MAP || "{}")); } catch {}
+    let telefono = msg.key.remoteJid.split("@")[0];
+    if (telefono.endsWith("@lid") || /^\d{10,}$/.test(telefono.replace("@lid", "")) === false) {
+      // si es LID, buscar en el mapa
+      const real = lidMap[telefono.replace("@lid", "")];
+      if (real) telefono = real;
+    }
+    telefono = String(telefono).replace(/\D/g, "");
+    if (telefono.length <= 9 && !telefono.startsWith("51")) telefono = "51" + telefono;
+
     const texto = (msg.message?.conversation ||
                    msg.message?.extendedTextMessage?.text || "").trim();
     if (!texto) return;
