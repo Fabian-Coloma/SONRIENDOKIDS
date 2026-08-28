@@ -11,9 +11,11 @@ app.use(express.json());
 // Endpoint de diagnóstico: muestra la última respuesta generada por Rebeca (para verificar que funciona)
 let ultimaRespuesta = null;
 let ultimoError = null;
+let ultimoRemoteJid = null;
+let ultimoLidCrudo = null;
 
 app.get("/", (_req, res) => res.json({ ok: true, bot: "Rebeca · Sonriendo Kids" }));
-app.get("/ultima", (_req, res) => res.json({ ok: true, ultimaRespuesta, ultimoError }));
+app.get("/ultima", (_req, res) => res.json({ ok: true, ultimaRespuesta, ultimoError, ultimoRemoteJid, ultimoLidCrudo }));
 
 app.post("/webhook", async (req, res) => {
   res.sendStatus(200); // responder rápido a Evolution
@@ -21,6 +23,8 @@ app.post("/webhook", async (req, res) => {
   try {
     const ev = req.body?.event || req.body?.data?.event;
     const msg = req.body.data;
+    ultimoRemoteJid = msg?.key?.remoteJid;
+    ultimoLidCrudo = msg?.key?.remoteJid?.split("@")[0];
     console.log("🔔 Webhook recibido. event=", ev, "| remoteJid=", msg?.key?.remoteJid, "| fromMe=", msg?.key?.fromMe);
     // Aceptar cualquier evento que traiga un mensaje de texto (más tolerante a versiones de Evolution)
     const tieneTexto = msg?.message?.conversation || msg?.message?.extendedTextMessage?.text;
