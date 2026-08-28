@@ -37,7 +37,7 @@ app.post("/webhook", async (req, res) => {
     // Evolution v1.8.2 entrega remoteJid como LID (12345@lid) que NO es enviabl.
     // Convertimos con LID_MAP (env) cuando aplique.
     const lidMap = {
-      "83421837680836": "51904104511",   // clínica
+      "83421837680836": "51937685350",   // tu personal 51 937 685 350
       "250078983893027": "51927784729",  // amiga 51 927 784 729
     };
     try { Object.assign(lidMap, JSON.parse(process.env.LID_MAP || "{}")); } catch {}
