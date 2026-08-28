@@ -37,11 +37,11 @@ app.post("/webhook", async (req, res) => {
       "250078983893027": "51927784729",  // amiga 51 927 784 729
     };
     try { Object.assign(lidMap, JSON.parse(process.env.LID_MAP || "{}")); } catch {}
-    let telefono = msg.key.remoteJid.split("@")[0];
-    if (telefono.endsWith("@lid") || /^\d{10,}$/.test(telefono.replace("@lid", "")) === false) {
-      // si es LID, buscar en el mapa
-      const real = lidMap[telefono.replace("@lid", "")];
-      if (real) telefono = real;
+    let telefono = msg.key.remoteJid.split("@")[0]; // ej: "83421837680836" o "51927784729"
+    // Si es un LID (clave en el mapa), convertirlo a número real
+    const lidLimpio = telefono.replace("@lid", "");
+    if (lidMap[lidLimpio]) {
+      telefono = lidMap[lidLimpio];
     }
     telefono = String(telefono).replace(/\D/g, "");
     if (telefono.length <= 9 && !telefono.startsWith("51")) telefono = "51" + telefono;
