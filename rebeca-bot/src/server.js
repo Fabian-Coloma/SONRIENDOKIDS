@@ -14,15 +14,17 @@ let ultimoError = null;
 let ultimoRemoteJid = null;
 let ultimoLidCrudo = null;
 let ultimoQR = null;
+let ultimoBody = null;
 
 app.get("/", (_req, res) => res.json({ ok: true, bot: "Rebeca · Sonriendo Kids" }));
-app.get("/ultima", (_req, res) => res.json({ ok: true, ultimaRespuesta, ultimoError, ultimoRemoteJid, ultimoLidCrudo }));
+app.get("/ultima", (_req, res) => res.json({ ok: true, ultimaRespuesta, ultimoError, ultimoRemoteJid, ultimoLidCrudo, ultimoQR, ultimoBody }));
 app.get("/qr", (_req, res) => res.json({ ok: true, qr: ultimoQR }));
 
 app.post("/webhook", async (req, res) => {
   res.sendStatus(200); // responder rápido a Evolution
 
   try {
+    ultimoBody = JSON.stringify(req.body).slice(0, 500); // diagnóstico: guardar body crudo
     const ev = req.body?.event || req.body?.data?.event;
     const msg = req.body.data;
     // Capturar QR enviado por Evolution v2 (evento QRCODE_UPDATED)
