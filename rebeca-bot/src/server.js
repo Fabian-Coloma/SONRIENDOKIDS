@@ -39,6 +39,7 @@ app.post("/webhook", async (req, res) => {
     const lidMap = {
       "83421837680836": "51937685350",   // tu personal 51 937 685 350
       "250078983893027": "51927784729",  // amiga 51 927 784 729
+      "217360040489001": "51916174388",  // hermano 51 916 174 388
     };
     try { Object.assign(lidMap, JSON.parse(process.env.LID_MAP || "{}")); } catch {}
     let telefono = msg.key.remoteJid.split("@")[0]; // ej: "83421837680836" o "51927784729"
