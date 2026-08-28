@@ -34,20 +34,8 @@ app.post("/webhook", async (req, res) => {
     }
     if (msg.key?.remoteJid?.includes("@g.us")) return; // ignorar grupos
 
-    // Evolution v1.8.2 entrega remoteJid como LID (12345@lid) que NO es enviabl.
-    // Convertimos con LID_MAP (env) cuando aplique.
-    const lidMap = {
-      "83421837680836": "51937685350",   // tu personal 51 937 685 350
-      "250078983893027": "51927784729",  // amiga 51 927 784 729
-      "217360040489001": "51916174388",  // hermano 51 916 174 388
-    };
-    try { Object.assign(lidMap, JSON.parse(process.env.LID_MAP || "{}")); } catch {}
-    let telefono = msg.key.remoteJid.split("@")[0]; // ej: "83421837680836" o "51927784729"
-    // Si es un LID (clave en el mapa), convertirlo a número real
-    const lidLimpio = telefono.replace("@lid", "");
-    if (lidMap[lidLimpio]) {
-      telefono = lidMap[lidLimpio];
-    }
+    // Evolution v2 entrega remoteJid como número real (51937685350@s.whatsapp.net)
+    let telefono = msg.key.remoteJid.split("@")[0];
     telefono = String(telefono).replace(/\D/g, "");
     if (telefono.length <= 9 && !telefono.startsWith("51")) telefono = "51" + telefono;
 

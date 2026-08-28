@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-const BASE = process.env.EVOLUTION_URL || "https://evolution-9z0r.onrender.com";
+const BASE = process.env.EVOLUTION_URL || "https://evolution-v2-f5mr.onrender.com";
 const KEY = process.env.EVOLUTION_API_KEY || "bxvo23ulxh7l3ohxyu348";
 const INSTANCE = process.env.EVOLUTION_INSTANCE || "sonriendokids";
 
@@ -26,11 +26,14 @@ export async function configurarWebhook() {
   const botUrl = process.env.BOT_URL || process.env.RENDER_EXTERNAL_URL;
   if (!botUrl) return;
   try {
-    // Formato Evolution v1.8.2: body plano (sin envolver en "webhook")
+    // Formato Evolution v2: body envuelto en "webhook"
     await api("POST", `/webhook/set/${INSTANCE}`, {
-      url: `${botUrl}/webhook`,
-      webhook_by_events: false,
-      events: ["MESSAGES_UPSERT"],
+      webhook: {
+        url: `${botUrl}/webhook`,
+        webhook_by_events: true,
+        events: ["MESSAGES_UPSERT"],
+        enabled: true,
+      },
     });
     console.log("🔗 Webhook de Evolution configurado →", `${botUrl}/webhook`);
   } catch (e) {
