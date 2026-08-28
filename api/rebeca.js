@@ -9,8 +9,8 @@ const INSTANCE = process.env.EVOLUTION_INSTANCE || "sonriendo";
 
 // LID_MAP: LIDs conocidos → números reales (Evolution v1.8.2 con MongoDB entrega LIDs)
 const LID_MAP = {
-  "83421837680836": "51937685350",  // +51 937 685 350 (usuario)
-  "250078983893027": "51927784729",  // +51 927 784 729 (usuario prueba)
+  "83421837680836": "51904104511",  // clínica (escritura desde la clínica misma)
+  "250078983893027": "51904104511",  // clínica (otro LID)
 };
 
 // Memoria de conversación (persiste entre invocaciones calientes; se resetea en cold start)
@@ -83,38 +83,29 @@ async function rebeca(historial, mensaje) {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`;
         const systemPrompt = `Eres Rebeca, la asistente virtual del consultorio odontopediátrico 'Sonriendo Kids', atendiendo por WhatsApp a padres de familia.
 
-Citas próximas: ${JSON.stringify(await citasProximas())}
+Horario: Lun-Sáb 9:00-13:00 y 14:00-17:30. Servicios: odontopediatría, ortopedia/ortodoncia, sedaciones. PUEDES agendar citas.
 
-PUEDES responder preguntas de: horarios de atención (Lun-Sáb 9:00-13:00 y 14:00-17:30), servicios (odontopediatría, ortopedia/ortodoncia, sedaciones), sedes, precios ("escríbenos para cotizar" si no sabes), y AGENDAR citas.
-
-PARA CREAR UNA CITA necesitas reunir SIEMPRE estos 5 datos preguntando de a uno:
-nombre del niño, nombre del apoderado, fecha (AAAA-MM-DD), hora (HH:MM), motivo.
-Cuando ya tengas los 5, responde SOLO este JSON sin texto adicional:
+PARA CREAR UNA CITA reúne SIEMPRE: nombre del niño, nombre del apoderado, fecha (AAAA-MM-DD), hora (HH:MM), motivo. Cuando tengas los 5, responde SOLO este JSON:
 {"comando":"agendar_cita","nombre_nino":"...","nombre_apoderado":"...","fecha":"AAAA-MM-DD","hora":"HH:MM","motivo":"..."}
 
-Horas ocupadas se validan después; no inventes disponibilidad.
-
-Si NO hay una acción que ejecutar, responde en texto natural, breve, cálido y con emojis, como secretaria amable. Solo usa *negritas* como formato.`;
+Si NO hay acción, responde en texto natural, breve, cálido y con emojis. Solo usa *negritas*.`;
         const contents = [
           ...historial.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
           { role: "user", parts: [{ text: mensaje }] },
         ];
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout por fetch
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ systemInstruction: { parts: [{ text: systemPrompt }] }, contents }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
+        const body = JSON.stringify({ systemInstruction: { parts: [{ text: systemPrompt }] }, contents });
+        const timeoutProm = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout 6s")), 6000));
+        const res = await Promise.race([
+          fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body }),
+          timeoutProm,
+        ]);
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
         return data.candidates[0].content.parts[0].text.trim();
       } catch (e) {
         ultimoError = e;
         console.error(`Gemini (${modelo}) intento ${intento + 1} falló:`, e.message);
-        await new Promise((r) => setTimeout(r, 500));
+        await new Promise((r) => setTimeout(r, 400));
       }
     }
   }
@@ -204,7 +195,7 @@ export default async function handler(req, res) {
     const ev = req.body?.event || req.body?.data?.event;
     if (ev !== "MESSAGES_UPSERT" && ev !== "messages.upsert") { console.log("⏭️ ignorado:", ev); return; }
     const msg = req.body.data;
-    if (msg.key?.fromMe || msg.key?.remoteJid?.includes("@g.us")) return;
+    if (msg.key?.remoteJid?.includes("@g.us")) return; // ignorar grupos
 
     const rawRemoteJid = msg.key.remoteJid || "";
     const telefonoLimpio = rawRemoteJid.split("@")[0].replace("@lid", "");
