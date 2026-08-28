@@ -13,9 +13,11 @@ let ultimaRespuesta = null;
 let ultimoError = null;
 let ultimoRemoteJid = null;
 let ultimoLidCrudo = null;
+let ultimoQR = null;
 
 app.get("/", (_req, res) => res.json({ ok: true, bot: "Rebeca · Sonriendo Kids" }));
 app.get("/ultima", (_req, res) => res.json({ ok: true, ultimaRespuesta, ultimoError, ultimoRemoteJid, ultimoLidCrudo }));
+app.get("/qr", (_req, res) => res.json({ ok: true, qr: ultimoQR }));
 
 app.post("/webhook", async (req, res) => {
   res.sendStatus(200); // responder rápido a Evolution
@@ -23,6 +25,15 @@ app.post("/webhook", async (req, res) => {
   try {
     const ev = req.body?.event || req.body?.data?.event;
     const msg = req.body.data;
+    // Capturar QR enviado por Evolution v2 (evento QRCODE_UPDATED)
+    if (ev === "QRCODE_UPDATED" || req.body?.event === "qrcode.updated") {
+      const b64 = req.body?.data?.qrcode?.base64 || req.body?.data?.base64 || req.body?.qrcode?.base64;
+      if (b64) {
+        ultimoQR = b64.startsWith("data:image") ? b64 : `data:image/png;base64,${b64}`;
+        console.log("🔳 QR recibido, listo en /qr");
+      }
+      return;
+    }
     ultimoRemoteJid = msg?.key?.remoteJid;
     ultimoLidCrudo = msg?.key?.remoteJid?.split("@")[0];
     console.log("🔔 Webhook recibido. event=", ev, "| remoteJid=", msg?.key?.remoteJid, "| fromMe=", msg?.key?.fromMe);
