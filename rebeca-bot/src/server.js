@@ -26,11 +26,18 @@ app.post("/webhook", async (req, res) => {
     const ev = req.body?.event || req.body?.data?.event;
     const msg = req.body.data;
     // Capturar QR enviado por Evolution v2 (evento QRCODE_UPDATED)
-    if (ev === "QRCODE_UPDATED" || req.body?.event === "qrcode.updated") {
-      const b64 = req.body?.data?.qrcode?.base64 || req.body?.data?.base64 || req.body?.qrcode?.base64;
+    if (ev === "QRCODE_UPDATED" || ev === "qrcode.updated" || req.body?.event === "QRCODE_UPDATED") {
+      const b64 =
+        req.body?.data?.qrcode?.base64 ||
+        req.body?.data?.base64 ||
+        req.body?.qrcode?.base64 ||
+        req.body?.base64 ||
+        (typeof req.body?.data === "string" ? req.body.data : null);
       if (b64) {
         ultimoQR = b64.startsWith("data:image") ? b64 : `data:image/png;base64,${b64}`;
         console.log("🔳 QR recibido, listo en /qr");
+      } else {
+        console.log("🔳 QRCODE_UPDATED sin base64. Body keys:", Object.keys(req.body || {}));
       }
       return;
     }
