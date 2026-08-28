@@ -19,13 +19,15 @@ app.post("/webhook", async (req, res) => {
   res.sendStatus(200); // responder rápido a Evolution
 
   try {
-    // Evolution v1.8.2 envía el evento en MAYÚSCULAS (MESSAGES_UPSERT); versiones nuevas en minúsculas.
     const ev = req.body?.event || req.body?.data?.event;
-    if (ev !== "MESSAGES_UPSERT" && ev !== "messages.upsert") {
-      console.log("⏭️ Evento ignorado:", ev);
+    const msg = req.body.data;
+    console.log("🔔 Webhook recibido. event=", ev, "| remoteJid=", msg?.key?.remoteJid, "| fromMe=", msg?.key?.fromMe);
+    // Aceptar cualquier evento que traiga un mensaje de texto (más tolerante a versiones de Evolution)
+    const tieneTexto = msg?.message?.conversation || msg?.message?.extendedTextMessage?.text;
+    if (!tieneTexto) {
+      console.log("⏭️ Sin texto utilizable, ignorado.");
       return;
     }
-    const msg = req.body.data;
     if (msg.key?.remoteJid?.includes("@g.us")) return; // ignorar grupos
 
     // Evolution v1.8.2 entrega remoteJid como LID (12345@lid) que NO es enviabl.
