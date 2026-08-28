@@ -3,8 +3,8 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const EVOLUTION_URL = process.env.EVOLUTION_URL || "https://evolution-9z0r.onrender.com";
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "miclave123";
-const INSTANCE = process.env.EVOLUTION_INSTANCE || "sonriendo";
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "bxvo23ulxh7l3ohxyu348";
+const INSTANCE = process.env.EVOLUTION_INSTANCE || "sonriendokids";
 
 async function sb(path, options = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {

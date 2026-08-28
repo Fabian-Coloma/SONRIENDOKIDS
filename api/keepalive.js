@@ -1,7 +1,7 @@
 // Keep-alive: mantiene Evolution despierto y reconfigura el webhook cada 5 min (cron de Vercel).
 const EVOLUTION_URL = process.env.EVOLUTION_URL || "https://evolution-9z0r.onrender.com";
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "miclave123";
-const INSTANCE = process.env.EVOLUTION_INSTANCE || "sonriendo";
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "bxvo23ulxh7l3ohxyu348";
+const INSTANCE = process.env.EVOLUTION_INSTANCE || "sonriendokids";
 const WEBHOOK_URL = "https://sonriendokids.vercel.app/api/rebeca";
 
 export default async function handler(req, res) {
