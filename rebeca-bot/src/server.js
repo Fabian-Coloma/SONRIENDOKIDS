@@ -103,16 +103,17 @@ app.listen(PORT, () => {
 });
 
 // 🔄 Keep-alive: evita que Render FREE duerma el bot y Evolution tras 15 min de inactividad.
-// Se hace ping a sí mismo y a Evolution cada 10 minutos para que siempre estén "despiertos".
+// Cada 5 min: ping a sí mismo, a Evolution, y RE-ARMA el webhook (Render FREE borra el webhook al reiniciar).
 const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 const EVOLUTION_URL = process.env.EVOLUTION_URL || "http://localhost:8080";
-const KEEPALIVE_MS = 10 * 60 * 1000; // 10 minutos
+const KEEPALIVE_MS = 5 * 60 * 1000; // 5 minutos
 
 setInterval(async () => {
   try {
     await fetch(SELF_URL).catch(() => {});
     await fetch(EVOLUTION_URL).catch(() => {});
-    console.log("💓 keep-alive ping enviado");
+    configurarWebhook(); // re-arma el webhook por si Evolution lo perdió
+    console.log("💓 keep-alive + webhook rearmado");
   } catch (e) {
     console.error("keep-alive error:", e.message);
   }
