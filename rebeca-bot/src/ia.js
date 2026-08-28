@@ -49,8 +49,8 @@ export async function agendarCita({ nombre_nino, nombre_apoderado, whatsapp, fec
 export async function rebeca(historial, mensaje) {
   const modelos = (process.env.GEMINI_MODEL
     ? [process.env.GEMINI_MODEL]
-    : ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
-  ).concat(["gemini-2.5-flash"]); // asegura al menos uno
+    : ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+  );
   const unicos = [...new Set(modelos)];
 
   let ultimoError = null;
@@ -59,18 +59,12 @@ export async function rebeca(historial, mensaje) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`;
       const systemPrompt = `Eres Rebeca, la asistente virtual del consultorio odontopediátrico 'Sonriendo Kids', atendiendo por WhatsApp a padres de familia.
 
-Citas próximas: ${JSON.stringify(await citasProximas())}
+Horario: Lun-Sáb 9:00-13:00 y 14:00-17:30. Servicios: odontopediatría, ortopedia/ortodoncia, sedaciones. PUEDES agendar citas.
 
-PUEDES responder preguntas de: horarios de atención (Lun-Sáb 9:00-13:00 y 14:00-17:30), servicios (odontopediatría, ortopedia/ortodoncia, sedaciones), sedes, precios ("escríbenos para cotizar" si no sabes), y AGENDAR citas.
-
-PARA CREAR UNA CITA necesitas reunir SIEMPRE estos 5 datos preguntando de a uno:
-nombre del niño, nombre del apoderado, fecha (AAAA-MM-DD), hora (HH:MM), motivo.
-Cuando ya tengas los 5, responde SOLO este JSON sin texto adicional:
+PARA CREAR UNA CITA reúne SIEMPRE: nombre del niño, nombre del apoderado, fecha (AAAA-MM-DD), hora (HH:MM), motivo. Cuando tengas los 5, responde SOLO este JSON:
 {"comando":"agendar_cita","nombre_nino":"...","nombre_apoderado":"...","fecha":"AAAA-MM-DD","hora":"HH:MM","motivo":"..."}
 
-Horas ocupadas se validan después; no inventes disponibilidad.
-
-Si NO hay una acción que ejecutar, responde en texto natural, breve, cálido y con emojis, como secretaria amable. Solo usa *negritas* como formato.`;
+Si NO hay acción, responde en texto natural, breve, cálido y con emojis. Solo usa *negritas*.`;
 
       const contents = [
         ...historial.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),

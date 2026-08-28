@@ -26,11 +26,14 @@ app.post("/webhook", async (req, res) => {
       return;
     }
     const msg = req.body.data;
-    if (msg.key?.fromMe || msg.key?.remoteJid?.includes("@g.us")) return;
+    if (msg.key?.remoteJid?.includes("@g.us")) return; // ignorar grupos
 
     // Evolution v1.8.2 entrega remoteJid como LID (12345@lid) que NO es enviabl.
     // Convertimos con LID_MAP (env) cuando aplique.
-    const lidMap = {};
+    const lidMap = {
+      "83421837680836": "51904104511",   // clínica
+      "250078983893027": "51927784729",  // amiga 51 927 784 729
+    };
     try { Object.assign(lidMap, JSON.parse(process.env.LID_MAP || "{}")); } catch {}
     let telefono = msg.key.remoteJid.split("@")[0];
     if (telefono.endsWith("@lid") || /^\d{10,}$/.test(telefono.replace("@lid", "")) === false) {

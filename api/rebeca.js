@@ -9,8 +9,8 @@ const INSTANCE = process.env.EVOLUTION_INSTANCE || "sonriendokids";
 
 // LID_MAP: LIDs conocidos → números reales (Evolution v1.8.2 con MongoDB entrega LIDs)
 const LID_MAP = {
-  "83421837680836": "51904104511",  // clínica (escritura desde la clínica misma)
-  "250078983893027": "51904104511",  // clínica (otro LID)
+  "83421837680836": "51904104511",   // clínica (escritura desde la clínica misma)
+  "250078983893027": "51927784729",  // amiga (51 927 784 729)
 };
 
 // Memoria de conversación (persiste entre invocaciones calientes; se resetea en cold start)
@@ -74,7 +74,7 @@ async function agendarCita({ nombre_nino, nombre_apoderado, whatsapp, fecha, hor
 async function rebeca(historial, mensaje) {
   const modelos = (process.env.GEMINI_MODEL
     ? [process.env.GEMINI_MODEL]
-    : ["gemini-2.5-flash", "gemini-3.6-flash", "gemini-2.0-flash", "gemini-1.5-flash"]);
+    : ["gemini-3.6-flash"]);
   const unicos = [...new Set(modelos)];
   let ultimoError = null;
   for (const modelo of unicos) {
@@ -94,11 +94,7 @@ Si NO hay acción, responde en texto natural, breve, cálido y con emojis. Solo 
           { role: "user", parts: [{ text: mensaje }] },
         ];
         const body = JSON.stringify({ systemInstruction: { parts: [{ text: systemPrompt }] }, contents });
-        const timeoutProm = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout 6s")), 6000));
-        const res = await Promise.race([
-          fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body }),
-          timeoutProm,
-        ]);
+        const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body });
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
         return data.candidates[0].content.parts[0].text.trim();

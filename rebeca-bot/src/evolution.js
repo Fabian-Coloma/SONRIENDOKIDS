@@ -1,8 +1,8 @@
 import "dotenv/config";
 
-const BASE = process.env.EVOLUTION_URL || "http://localhost:8080";
-const KEY = process.env.EVOLUTION_API_KEY;
-const INSTANCE = process.env.EVOLUTION_INSTANCE || "sonriendo";
+const BASE = process.env.EVOLUTION_URL || "https://evolution-9z0r.onrender.com";
+const KEY = process.env.EVOLUTION_API_KEY || "bxvo23ulxh7l3ohxyu348";
+const INSTANCE = process.env.EVOLUTION_INSTANCE || "sonriendokids";
 
 async function api(method, path, body) {
   const res = await fetch(`${BASE}${path}`, {
@@ -17,9 +17,7 @@ async function api(method, path, body) {
 export async function enviarTexto(telefono, texto) {
   await api("POST", `/message/sendText/${INSTANCE}`, {
     number: telefono,
-    text: texto,
-    delay: 1200,          // pausa humanizada
-    linkPreview: false,
+    textMessage: { text: texto, delay: 1200, linkPreview: false },
   });
 }
 
