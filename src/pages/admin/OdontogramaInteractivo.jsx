@@ -89,14 +89,19 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
   const confirmarPresupuesto = async () => {
     try {
       const concepto = carrito.map(c => c.procedimiento).join(' + ');
+      const montoNum = Number(totalProforma) || 0;
       const { error } = await supabase.from('finanzas_ingresos').insert([{
+        paciente_id: pacienteId || null,
         concepto: `Presupuesto confirmado — ${concepto}`.slice(0, 200),
-        monto: totalProforma,
+        monto: montoNum,
         fecha: new Date().toISOString().slice(0, 10),
         metodo_pago: 'Efectivo',
       }]);
       if (error) throw error;
       // Abre modal de consentimientos (el carrito ya se guardó vía onGuardar)
+      alert(`✅ Ingreso registrado en Finanzas por S/ ${montoNum.toFixed(2)}`);
+      // Avisa a la vista de Finanzas que recargue (evento del navegador, 100% fiable en SPA)
+      window.dispatchEvent(new Event('finanzas-actualizar'));
       setConsentimientoSeleccionado('');
       setModalConsentimiento(true);
     } catch (e) {
@@ -106,10 +111,11 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
   };
 
   // Al imprimir el consentimiento:
-  // 1) guarda el PDF del odontograma (piezas + monto) en Supabase,
-  // 2) cierra modales + odontograma y navega a Notas de Evolución
-  const imprimirConsentimiento = async (e) => {
-    if (!consentimientoSeleccionado) { e.preventDefault(); return; }
+  // - descarga el PDF del odontograma (piezas + monto),
+  // - cierra modales + odontograma y navega a Notas de Evolución.
+  // (El ingreso en Finanzas ya se registró en confirmarPresupuesto)
+  const imprimirConsentimiento = async () => {
+    if (!consentimientoSeleccionado) return;
 
     const { jsPDF } = await import('jspdf');
     const doc = new jsPDF();
@@ -140,7 +146,6 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
     let pdfUrl = null;
     if (up) {
       pdfUrl = supabase.storage.from('odontogramas').getPublicUrl(`sesiones/${fileName}`).data.publicUrl;
-      // Guardamos el registro en la tabla para "Historial de Visitas"
       await supabase.from('odontogramas_sesion').insert([{
         paciente_id: pacienteId,
         fecha: new Date().toISOString().slice(0, 10),
@@ -156,59 +161,67 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
   };
 
   return (
-    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-2 sm:p-4 animate-fade-in backdrop-blur-sm">
-      <div className="bg-white w-[98vw] max-w-[1500px] h-[95vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden relative">
+    <div className="fixed inset-0 bg-black/75 z-50 p-2 sm:p-4 animate-fade-in backdrop-blur-sm overflow-y-auto h-screen flex items-center justify-center">
+      <div className="bg-white w-[98vw] max-w-[1500px] max-h-[95vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden relative">
         
         <div className="bg-[#003B5C] px-6 py-3 flex justify-between items-center shrink-0">
           <h2 className="text-white text-lg font-bold flex items-center gap-2">
             <span className="material-symbols-outlined">dentistry</span> Odontograma Mixto y Cotización
           </h2>
-          <button onClick={onClose} className="text-white hover:text-red-400 transition-colors">
-            <span className="material-symbols-outlined text-2xl">close</span>
+          <button
+            onClick={() => {
+              if (carrito.length > 0 && !window.confirm('¿Cerrar el odontograma sin guardar ni confirmar el presupuesto?')) return;
+              onClose();
+            }}
+            className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-3 py-1.5 rounded-lg transition-colors"
+            title="Cerrar sin guardar"
+          >
+            <span className="material-symbols-outlined text-xl leading-none">close</span>
+            Cerrar
           </button>
         </div>
 
         <div className="flex-1 flex flex-col lg:flex-row bg-gray-100 overflow-hidden">
           
-          <div className="flex-1 p-2 lg:p-4 overflow-x-hidden flex justify-center items-start">
+          <div className="flex-1 p-2 lg:p-4 overflow-x-auto scrollbar-hide lg:overflow-hidden flex justify-center items-start min-w-0">
             <div className="bg-white border border-gray-200 rounded-xl p-4 lg:p-6 shadow-sm flex flex-col items-center w-full max-w-[900px]">
               
-              <div className="flex justify-center border-b border-gray-200 pb-4 mb-4 gap-2 lg:gap-4 w-full">
-                <div className="flex gap-1 md:gap-1.5">
+              <div className="flex justify-center items-center border-b border-gray-200 pb-4 mb-4 gap-2 lg:gap-4 w-full">
+                <div className="flex-1 flex justify-end gap-1 md:gap-1.5 min-w-0">
                   {adultoSuperiorDerecho.map(num => <Diente key={num} numero={num} tratamientos={obtenerTratamientosDiente(num)} onClickCara={abrirModalProcedimiento} posicion="superior" />)}
                 </div>
-                <div className="border-l-2 border-gray-300"></div>
-                <div className="flex gap-1 md:gap-1.5">
+                <div className="border-l-2 border-gray-300 h-10 self-center"></div>
+                <div className="flex-1 flex justify-start gap-1 md:gap-1.5 min-w-0">
                   {adultoSuperiorIzquierdo.map(num => <Diente key={num} numero={num} tratamientos={obtenerTratamientosDiente(num)} onClickCara={abrirModalProcedimiento} posicion="superior" />)}
                 </div>
               </div>
 
-              <div className="flex justify-center border-b border-dashed border-blue-200 pb-4 mb-4 gap-2 lg:gap-4 w-full px-8">
-                <div className="flex gap-1 md:gap-1.5">
+              <div className="flex justify-center items-center border-b border-dashed border-blue-200 pb-4 mb-4 gap-2 lg:gap-4 w-full px-4 lg:px-8">
+                <div className="flex-1 flex justify-end gap-1 md:gap-1.5 min-w-0">
                   {ninoSuperiorDerecho.map(num => <Diente key={num} numero={num} tratamientos={obtenerTratamientosDiente(num)} onClickCara={abrirModalProcedimiento} posicion="superior" />)}
                 </div>
-                <div className="border-l-2 border-gray-300"></div>
-                <div className="flex gap-1 md:gap-1.5">
+                <div className="border-l-2 border-gray-300 h-10 self-center"></div>
+                <div className="flex-1 flex justify-start gap-1 md:gap-1.5 min-w-0">
                   {ninoSuperiorIzquierdo.map(num => <Diente key={num} numero={num} tratamientos={obtenerTratamientosDiente(num)} onClickCara={abrirModalProcedimiento} posicion="superior" />)}
                 </div>
               </div>
 
-              <div className="flex justify-center border-b border-gray-200 pb-4 mb-4 gap-2 lg:gap-4 w-full px-8">
-                <div className="flex gap-1 md:gap-1.5">
+              <div className="flex justify-center items-center border-b border-gray-200 pb-4 mb-4 gap-2 lg:gap-4 w-full px-4 lg:px-8">
+                <div className="flex-1 flex justify-end gap-1 md:gap-1.5 min-w-0">
                   {ninoInferiorDerecho.map(num => <Diente key={num} numero={num} tratamientos={obtenerTratamientosDiente(num)} onClickCara={abrirModalProcedimiento} posicion="inferior" />)}
                 </div>
-                <div className="border-l-2 border-gray-300"></div>
-                <div className="flex gap-1 md:gap-1.5">
+                <div className="border-l-2 border-gray-300 h-10 self-center"></div>
+                <div className="flex-1 flex justify-start gap-1 md:gap-1.5 min-w-0">
                   {ninoInferiorIzquierdo.map(num => <Diente key={num} numero={num} tratamientos={obtenerTratamientosDiente(num)} onClickCara={abrirModalProcedimiento} posicion="inferior" />)}
                 </div>
               </div>
 
-              <div className="flex justify-center gap-2 lg:gap-4 w-full">
-                <div className="flex gap-1 md:gap-1.5">
+              <div className="flex justify-center items-center gap-2 lg:gap-4 w-full px-4 lg:px-8">
+                <div className="flex-1 flex justify-end gap-1 md:gap-1.5 min-w-0">
                   {adultoInferiorDerecho.map(num => <Diente key={num} numero={num} tratamientos={obtenerTratamientosDiente(num)} onClickCara={abrirModalProcedimiento} posicion="inferior" />)}
                 </div>
-                <div className="border-l-2 border-gray-300"></div>
-                <div className="flex gap-1 md:gap-1.5">
+                <div className="border-l-2 border-gray-300 h-10 self-center"></div>
+                <div className="flex-1 flex justify-start gap-1 md:gap-1.5 min-w-0">
                   {adultoInferiorIzquierdo.map(num => <Diente key={num} numero={num} tratamientos={obtenerTratamientosDiente(num)} onClickCara={abrirModalProcedimiento} posicion="inferior" />)}
                 </div>
               </div>
@@ -336,26 +349,24 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
                 className="flex-1 py-2.5 rounded-xl text-gray-600 bg-gray-100 font-bold hover:bg-gray-200 text-sm">
                 Cerrar
               </button>
-              <a
-                href={(() => {
+              <button
+                onClick={() => {
+                  if (!consentimientoSeleccionado) return;
+                  // Descarga el consentimiento (.docx) en una pestaña nueva
                   const c = [
                     { id: 'pulpar', archivo: '/consentimientos/CONSENTIMIENTO TTO PULPAR.docx' },
                     { id: 'curaciones', archivo: '/consentimientos/CONSENTIMIENTO CURACIONES.docx' },
                     { id: 'exodoncias', archivo: '/consentimientos/CONSENTIMIENTO EXODONCIAS.docx' },
                     { id: 'ortodoncia', archivo: '/consentimientos/Ortodoncia.pdf' },
-                  ].find(c => c.id === consentimientoSeleccionado);
-                  return c ? c.archivo : undefined;
-                })()}
-                download
-                onClick={(e) => {
-                  if (!consentimientoSeleccionado) { e.preventDefault(); return; }
-                  // Cierra modal + odontograma y navega a Notas de Evolución
-                  setTimeout(() => imprimirConsentimiento(e), 300);
+                  ].find(x => x.id === consentimientoSeleccionado);
+                  if (c) window.open(c.archivo, '_blank');
+                  // Registra en Finanzas + cierra ambos modales
+                  imprimirConsentimiento();
                 }}
                 className={`flex-1 py-2.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-1 ${
                   consentimientoSeleccionado ? 'bg-[#003B5C] hover:bg-[#002a42]' : 'bg-gray-300 pointer-events-none'}`}>
                 <span className="material-symbols-outlined text-base">download</span> Imprimir
-              </a>
+              </button>
             </div>
           </div>
         </div>

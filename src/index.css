@@ -1,2 +1,11 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
+
+/* Oculta la barra de scroll pero mantiene el scroll funcional (por dedo/rueda) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

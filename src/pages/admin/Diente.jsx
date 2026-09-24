@@ -22,7 +22,7 @@ export default function Diente({ numero, tratamientos, onClickCara, posicion = '
   ];
 
   return (
-    <div className="flex flex-col items-center group relative w-[46px] shrink-0">
+    <div className="flex flex-col items-center group relative w-[30px] xs:w-[38px] sm:w-[46px]">
       <span className={`text-[10px] font-black text-[#003B5C] ${posicion === 'superior' ? 'order-1 mb-1' : 'order-3 mt-1'}`}>
         {numero}
       </span>
@@ -43,12 +43,11 @@ export default function Diente({ numero, tratamientos, onClickCara, posicion = '
       </div>
 
       {/* Cuadrícula de caras: grid 3x3 de 15px, bordes incluidos, sin overflow */}
-      <div className={`grid grid-cols-3 z-30 ${posicion === 'superior' ? 'order-3' : 'order-1'}`}
-           style={{ width: '45px', height: '45px' }}>
+      <div className={`grid grid-cols-3 z-30 w-[30px] h-[30px] sm:w-[45px] sm:h-[45px] ${posicion === 'superior' ? 'order-3' : 'order-1'}`}>
         {caras.map(c => (
           <div key={c.nombre}
             onClick={() => onClickCara(numero, c.nombre)}
-            className={`w-[15px] h-[15px] border border-gray-400 cursor-pointer transition-colors duration-200 hover:bg-blue-200 ${obtenerColor(c.nombre)} ${c.celda}`}
+            className={`w-[10px] h-[10px] sm:w-[15px] sm:h-[15px] border border-gray-400 cursor-pointer transition-colors duration-200 hover:bg-blue-200 ${obtenerColor(c.nombre)} ${c.celda}`}
           />
         ))}
       </div>

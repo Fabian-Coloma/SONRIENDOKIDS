@@ -2,9 +2,14 @@
 -- SQL para ejecutar en Supabase → SQL Editor (todo de una vez)
 -- ============================================================
 
--- 1. Fix notas_evolucion: id autogenerado + campo dentista_cop
+-- 1. Fix notas_evolucion: id autogenerado + campos que el formulario guarda
 alter table notas_evolucion alter column id set default gen_random_uuid();
 alter table notas_evolucion add column if not exists dentista_cop text;
+alter table notas_evolucion add column if not exists diagnostico_cie10 text;
+alter table notas_evolucion add column if not exists tratamiento text;
+alter table notas_evolucion add column if not exists indicaciones text;
+alter table notas_evolucion add column if not exists examen_intraoral text;
+alter table notas_evolucion add column if not exists medicamentos text;
 
 -- 2. Tabla odontogramas_sesion (PDF del odontograma + monto, por paciente)
 create table if not exists odontogramas_sesion (

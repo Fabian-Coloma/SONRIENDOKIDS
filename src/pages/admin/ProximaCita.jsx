@@ -1,23 +1,56 @@
 // ProximaCita.jsx — Sección bajo Notas de Evolución
 // La doctora agenda la próxima cita del paciente; genera recordatorios automáticos
 // por WSPP y correo 1 semana antes, 1 día antes y 3 horas antes.
+// Lógica de disponibilidad IGUAL a la landing: horario visible completo,
+// solo martes y miércoles 11am-8pm habilitados; el resto se muestra "Ocupado".
 import { useState } from 'react';
 import { supabase } from '../../supabase';
+
+// Días que SÍ tienen disponibilidad real (martes=2, miércoles=3)
+const DIAS_LIBRES = [2, 3];
+// Hora a partir de la cual hay disponibilidad (11:00)
+const HORA_LIBRE_INICIO = 11;
+// Horarios visibles en pantalla (10:00 - 20:00)
+const HORARIOS = [
+  "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
+  "16:00", "17:00", "18:00", "19:00", "20:00"
+];
 
 export default function ProximaCita({ pacienteId }) {
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
+  const [horariosOcupados, setHorariosOcupados] = useState([]);
   const [form, setForm] = useState({
     fecha: '', hora: '', motivo: '', notas: '',
     rec_wspp: true, rec_email: true,
   });
 
-  const diaValido = form.fecha ? [2, 3].includes(new Date(form.fecha + 'T12:00:00').getDay()) : true;
+  const diaValido = form.fecha ? DIAS_LIBRES.includes(new Date(form.fecha + 'T12:00:00').getDay()) : true;
+
+  const handleFechaChange = (e) => {
+    const f = e.target.value;
+    if (!f) { setHorariosOcupados([]); setForm({ ...form, fecha: '', hora: '' }); return; }
+    const dia = new Date(f + 'T12:00:00').getDay();
+    const nuevosOcupados = [];
+    if (!DIAS_LIBRES.includes(dia)) {
+      // Día sin disponibilidad: todas las horas ocupadas
+      HORARIOS.forEach(h => nuevosOcupados.push(h));
+    } else {
+      // Martes/miércoles: solo desde las 11:00 en adelante
+      HORARIOS.forEach(h => {
+        const hh = parseInt(h.slice(0, 2), 10);
+        if (hh < HORA_LIBRE_INICIO) nuevosOcupados.push(h);
+      });
+    }
+    setHorariosOcupados(nuevosOcupados);
+    setForm({ ...form, fecha: f, hora: '' });
+  };
 
   async function guardar(e) {
     e.preventDefault();
     if (!pacienteId) return alert('Guarda primero la filiación del paciente.');
-    if (!diaValido) return alert('📅 Solo martes y miércoles por ahora.');
+    if (!diaValido) return alert('Ese día no hay disponibilidad. Elige otro en el calendario.');
+    if (horariosOcupados.includes(form.hora)) return alert('Ese horario ya no está disponible. Elige uno de los turnos resaltados.');
     setGuardando(true);
     try {
       const { error } = await supabase.from('proximas_citas').insert([{
@@ -32,6 +65,7 @@ export default function ProximaCita({ pacienteId }) {
       if (error) throw error;
       setGuardado(true);
       setForm({ fecha: '', hora: '', motivo: '', notas: '', rec_wspp: true, rec_email: true });
+      setHorariosOcupados([]);
       setTimeout(() => setGuardado(false), 6000);
     } catch (err) {
       console.error(err);
@@ -63,19 +97,27 @@ export default function ProximaCita({ pacienteId }) {
             <label className="block text-xs font-bold text-[#003B5C] mb-1">Fecha</label>
             <input type="date" required min={new Date().toISOString().slice(0,10)}
               value={form.fecha}
-              onChange={(e) => setForm({ ...form, fecha: e.target.value })}
-              className={`w-full px-3 py-2 rounded-lg border bg-white text-sm ${form.fecha && !diaValido ? 'border-red-400' : 'border-gray-300'}`} />
+              onChange={handleFechaChange}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm" />
             {form.fecha && !diaValido && (
-              <p className="text-[11px] text-red-500 mt-1">Solo martes y miércoles.</p>
+              <p className="text-[11px] text-amber-600 mt-1">Ese día no hay disponibilidad. Elige otro en el calendario.</p>
             )}
           </div>
           <div>
-            <label className="block text-xs font-bold text-[#003B5C] mb-1">Hora (11am–8pm)</label>
-            <select required value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm">
+            <label className="block text-xs font-bold text-[#003B5C] mb-1">Hora de la cita</label>
+            <select required value={form.hora}
+              onChange={(e) => setForm({ ...form, hora: e.target.value })}
+              disabled={!form.fecha}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm disabled:bg-gray-100">
               <option value="">-- Hora --</option>
-              {['11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'].map(h =>
-                <option key={h} value={h}>{h}</option>)}
+              {HORARIOS.map(h => {
+                const ocupado = horariosOcupados.includes(h);
+                return (
+                  <option key={h} value={h} disabled={ocupado}>
+                    {h} {ocupado ? '· Ocupado' : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
         </div>
@@ -102,7 +144,7 @@ export default function ProximaCita({ pacienteId }) {
           </label>
         </div>
 
-        <button type="submit" disabled={guardando || !form.fecha || !form.hora}
+        <button type="submit" disabled={guardando || !form.fecha || !form.hora || horariosOcupados.includes(form.hora)}
           className="w-full py-2.5 rounded-xl bg-[#f4a261] hover:bg-[#e76f51] text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm">
           <span className="material-symbols-outlined">notifications_active</span>
           {guardando ? 'Guardando…' : 'Guardar Próxima Cita'}

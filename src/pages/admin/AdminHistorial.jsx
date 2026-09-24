@@ -796,38 +796,42 @@ export default function AdminHistorial() {
                     <div className="space-y-2">
                       <label className="block text-xs font-bold text-[#003B5C] mb-1">Prescripción (Medicamento + dosis)</label>
                       {nuevaNota.prescripciones?.map((p, i) => (
-                        <div key={i} className="flex gap-2 items-start">
-                          <select
-                            value={p.medicamento}
-                            onChange={(e) => {
-                              const nuevas = [...(nuevaNota.prescripciones || [])];
-                              nuevas[i] = { ...nuevas[i], medicamento: e.target.value };
-                              setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
-                            }}
-                            className="flex-1 px-3 py-2 rounded-lg border bg-white text-sm"
-                          >
-                            <option value="">-- Seleccione medicamento --</option>
-                            {MEDICAMENTOS.map(m => <option key={m} value={m}>{m}</option>)}
-                          </select>
-                          <input
-                            type="text"
-                            placeholder="Cantidad y gramaje (Ej. 500mg c/8h x 5 días)"
-                            value={p.dosis}
-                            onChange={(e) => {
-                              const nuevas = [...(nuevaNota.prescripciones || [])];
-                              nuevas[i] = { ...nuevas[i], dosis: e.target.value };
-                              setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
-                            }}
-                            className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:border-[#003B5C]"
-                          />
+                        <div key={i} className="space-y-1">
+                          <div className="grid grid-cols-2 gap-2 items-stretch">
+                            <select
+                              value={p.medicamento}
+                              onChange={(e) => {
+                                const nuevas = [...(nuevaNota.prescripciones || [])];
+                                nuevas[i] = { ...nuevas[i], medicamento: e.target.value };
+                                setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
+                              }}
+                              className="w-full px-3 py-3 rounded-lg border bg-white text-sm"
+                            >
+                              <option value="">-- Seleccione medicamento --</option>
+                              {MEDICAMENTOS.map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+                            <input
+                              type="text"
+                              placeholder="Cantidad y gramaje (Ej. 500mg c/8h x 5 días)"
+                              value={p.dosis}
+                              onChange={(e) => {
+                                const nuevas = [...(nuevaNota.prescripciones || [])];
+                                nuevas[i] = { ...nuevas[i], dosis: e.target.value };
+                                setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
+                              }}
+                              className="w-full px-3 py-3 rounded-lg border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:border-[#003B5C]"
+                            />
+                          </div>
                           {(nuevaNota.prescripciones?.length > 1) && (
-                            <button type="button" onClick={() => {
-                              const nuevas = [...(nuevaNota.prescripciones || [])];
-                              nuevas.splice(i, 1);
-                              setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
-                            }} className="p-2 text-red-400 hover:text-red-600">
-                              <span className="material-symbols-outlined text-lg">delete</span>
-                            </button>
+                            <div className="flex justify-end">
+                              <button type="button" onClick={() => {
+                                const nuevas = [...(nuevaNota.prescripciones || [])];
+                                nuevas.splice(i, 1);
+                                setNuevaNota({ ...nuevaNota, prescripciones: nuevas });
+                              }} className="p-1 text-red-400 hover:text-red-600">
+                                <span className="material-symbols-outlined text-base">delete</span>
+                              </button>
+                            </div>
                           )}
                         </div>
                       ))}

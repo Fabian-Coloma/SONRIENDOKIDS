@@ -258,38 +258,7 @@ const AdminCitas = () => {
         </div>
       </div>
 
-      {vistaActiva === 'diaria' ? (
-        <AgendaDiaria 
-          citas={citasDelDia} 
-          onCambiarEstado={handleCambiarEstado}
-          onEditar={abrirModalEditar} // AHORA SÍ EXISTE ESTA FUNCIÓN
-          onEliminar={handleEliminar}
-          onVerDetalle={abrirDetalle}
-        />
-      ) : (
-        <AgendaSemanal 
-          citas={citas} 
-          fechaBase={fecha} // SINCRONIZADO CON EL ESTADO CENTRAL
-          onCambiarFecha={(nuevaFecha) => setFecha(nuevaFecha)} 
-          onAgendarClick={(fechaCelda, horaCelda) => abrirModalNuevo(fechaCelda, horaCelda)} 
-          onVerDetalle={abrirDetalle} 
-          onMoverCita={handleMoverCita} 
-          onEliminar={handleEliminar}
-        />
-      )}
-
-      {/* Modal para Crear / Editar */}
-      <ModalCita 
-        isOpen={modalAbierto} 
-        onClose={() => setModalAbierto(false)}
-        onGuardar={handleGuardarCita}
-        pacientesGuardados={pacientesBD}
-        datosIniciales={datosCita}
-        cargando={cargando}
-      />
-
-      {/* Modal para Ver Detalles y Pagos — solo se monta cuando está abierto */}
-      {modalDetalleAbierto && (
+      {modalDetalleAbierto ? (
         <ModalDetalleCita 
           cita={citaParaDetalle}
           isOpen={true}
@@ -303,12 +272,43 @@ const AdminCitas = () => {
               alert('No se pudo actualizar el estado de pago.');
               return;
             }
-            // Actualizar en memoria y refrescar desde BD (agenda + modal sincronizados)
             setCitaParaDetalle(prev => prev ? { ...prev, estado_pago: nuevoEstado } : prev);
             await cargarDatosPrincipales();
           }}
         />
+      ) : (
+        vistaActiva === 'diaria' ? (
+          <AgendaDiaria 
+            citas={citasDelDia} 
+            onCambiarEstado={handleCambiarEstado}
+            onEditar={abrirModalEditar}
+            onEliminar={handleEliminar}
+            onVerDetalle={abrirDetalle}
+          />
+        ) : (
+          <AgendaSemanal 
+            citas={citas} 
+            fechaBase={fecha}
+            onCambiarFecha={(nuevaFecha) => setFecha(nuevaFecha)} 
+            onAgendarClick={(fechaCelda, horaCelda) => abrirModalNuevo(fechaCelda, horaCelda)} 
+            onVerDetalle={abrirDetalle} 
+            onMoverCita={handleMoverCita} 
+            onEliminar={handleEliminar}
+          />
+        )
       )}
+
+      {/* Modal para Crear / Editar (sigue siendo emergente) */}
+      <ModalCita 
+        isOpen={modalAbierto} 
+        onClose={() => setModalAbierto(false)}
+        onGuardar={handleGuardarCita}
+        pacientesGuardados={pacientesBD}
+        datosIniciales={datosCita}
+        cargando={cargando}
+      />
+
+      {/* Cierre del contenedor principal */}
     </div>
   );
 };
