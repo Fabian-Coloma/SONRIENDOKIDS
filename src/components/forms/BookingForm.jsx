@@ -22,14 +22,19 @@ const BookingForm = () => {
   const [enviando, setEnviando] = useState(false);
 
   // --- LÓGICA DE HORARIOS (date picker + botones) ---
-  // Horarios en pantalla: 10:00 - 20:00 (cada 1 hora)
-  const horariosAtencion = [
-    "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
-    "16:00", "17:00", "18:00", "19:00", "20:00"
-  ];
-  // Días que SÍ atienden (libres): mar (2) y mié (3)
-  const DIAS_LIBRES = [2, 3];
-  const HORA_LIBRE_INICIO = 11; // mar/mié libres desde las 11:00
+  // Horario semanal completo según atención del consultorio
+  const HORARIO_SEMANA = {
+    0: null, // domingo — cerrado
+    1: null, // lunes  — cerrado
+    2: ["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00"], // martes  9am-7pm (cierra a las 8pm)
+    3: null, // miércoles — cerrado
+    4: ["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00"], // jueves  9am-7pm (cierra a las 8pm)
+    5: ["19:00","20:00"], // viernes 7pm-8pm (cierra a las 9pm)
+    6: ["19:00","20:00"]  // sábado  7pm-8pm (cierra a las 9pm)
+  };
+
+  // Estado de los horarios que se muestran para el día seleccionado
+  const [horariosDelDia, setHorariosDelDia] = useState([]);
 
   // --- LÓGICA DE LA MÁSCARA Y EDAD ---
   const handleFechaChange = (e) => {
@@ -93,13 +98,33 @@ const BookingForm = () => {
       if (error) throw error;
 
       if (data) {
-        const horasReservadas = data.map(cita => cita.hora.substring(0, 5)); 
+        const horasReservadas = data.map(cita => cita.hora.substring(0, 5));
         setHorariosOcupados(horasReservadas);
       }
     } catch (error) {
       console.error("Error al consultar disponibilidad:", error);
     } finally {
       setCargandoHorarios(false);
+    }
+  };
+
+  // Actualiza los horarios visibles cuando la fecha cambia
+  const actualizarHorariosPorFecha = (fecha) => {
+    if (!fecha) {
+      setHorariosDelDia([]);
+      setHorariosOcupados([]);
+      return;
+    }
+    const dia = new Date(fecha + 'T12:00:00').getDay();
+    const horariosHabilitados = HORARIO_SEMANA[dia] || [];
+    setHorariosDelDia(horariosHabilitados);
+    // Las horas ya ocupadas las consultamos desde BD (consultarDisponibilidad)
+    // Aquí solo pre-filtramos si el día no tiene horario
+    if (horariosHabilitados.length === 0) {
+      // Día cerrado: marcar todas las horas imaginarias como "ocupadas" para que no se puedan clicar
+      setHorariosOcupados(["00:00"]);
+    } else {
+      setHorariosOcupados([]);
     }
   };
 
@@ -119,6 +144,8 @@ const BookingForm = () => {
 
   // Al hacer clic en una celda disponible: fija día + hora
   const seleccionarCelda = (diaKey, hora) => {
+    const horariosHabilitados = HORARIO_SEMANA[diaKey];
+    if (!horariosHabilitados || horariosHabilitados.length === 0) return;
     const fecha = calcularFechaProxima(diaKey);
     setFormData({ ...formData, fechaPropuesta: fecha, horaPropuesta: hora });
   };
@@ -161,11 +188,11 @@ const BookingForm = () => {
       return;
     }
 
-    // Validación de seguridad: solo mar/mié 11:00-20:00
+    // Validación de seguridad: día y hora deben estar habilitados
     if (formData.fechaPropuesta) {
       const dia = new Date(formData.fechaPropuesta + 'T12:00:00').getDay();
-      const hh = parseInt(formData.horaPropuesta.slice(0, 2), 10);
-      if (!DIAS_LIBRES.includes(dia) || hh < HORA_LIBRE_INICIO) {
+      const horariosHabilitados = HORARIO_SEMANA[dia] || [];
+      if (horariosHabilitados.length === 0 || !horariosHabilitados.includes(formData.horaPropuesta)) {
         alert("Ese horario ya no está disponible. Por favor elige uno de los turnos resaltados.");
         return;
       }
@@ -344,17 +371,10 @@ const BookingForm = () => {
               <label className="text-sm font-bold text-[#6b584a] ml-2">Día de la Cita</label>
               <input type="date" name="fechaPropuesta" required value={formData.fechaPropuesta} className="w-full px-5 py-3 rounded-2xl border-2 border-[#e3d1c3] bg-white text-gray-700 focus:border-sonriendo-teal focus:ring-4 focus:ring-sonriendo-teal/10 outline-none transition-all duration-300 cursor-pointer font-medium" min={new Date().toISOString().slice(0,10)} onChange={(e) => {
                 const f = e.target.value;
-                if (!f) { handleChange(e); setHorariosOcupados([]); return; }
-                const dia = new Date(f + 'T12:00:00').getDay();
-                const esLibre = DIAS_LIBRES.includes(dia);
-                const ocupados = horariosAtencion.filter(h => {
-                  const hh = parseInt(h.slice(0, 2), 10);
-                  if (!esLibre) return true;
-                  if (hh < HORA_LIBRE_INICIO) return true;
-                  return false;
-                });
-                setHorariosOcupados(ocupados);
+                if (!f) { handleChange(e); setHorariosDelDia([]); setHorariosOcupados([]); return; }
+                actualizarHorariosPorFecha(f);
                 handleChange(e);
+                consultarDisponibilidad(f);
               }} />
             </div>
             <div className="space-y-2 group">
@@ -367,31 +387,37 @@ const BookingForm = () => {
             <label className="text-sm font-bold text-[#6b584a] ml-2 mb-3 block">
               {formData.fechaPropuesta ? 'Selecciona una hora disponible:' : 'Elige un día para ver las horas disponibles'}
             </label>
-            
+
             {formData.fechaPropuesta ? (
               <div className="grid grid-cols-4 gap-3">
-                {horariosAtencion.map((hora) => {
-                  const ocupado = horariosOcupados.includes(hora);
-                  const seleccionado = formData.horaPropuesta === hora;
+                {horariosDelDia.length === 0 ? (
+                  <p className="col-span-4 text-gray-400 text-sm italic py-4 text-center">
+                    Este día no tiene horarios habilitados para cita.
+                  </p>
+                ) : (
+                  horariosDelDia.map((hora) => {
+                    const ocupado = horariosOcupados.includes(hora);
+                    const seleccionado = formData.horaPropuesta === hora;
 
-                  return (
-                    <button
-                      key={hora}
-                      type="button"
-                      disabled={ocupado}
-                      onClick={() => handleHoraSelect(hora)}
-                      className={`py-2 rounded-xl font-bold text-sm transition-all duration-300 border-2 
-                        ${ocupado 
-                          ? 'bg-gray-100 border-gray-100 text-gray-400 cursor-not-allowed opacity-60' 
-                          : seleccionado
-                            ? 'bg-sonriendo-teal border-sonriendo-teal text-white shadow-md transform scale-105'
-                            : 'bg-white border-[#e3d1c3] text-gray-600 hover:border-sonriendo-teal hover:text-sonriendo-teal'
-                        }`}
-                    >
-                      {hora}
-                    </button>
-                  );
-                })}
+                    return (
+                      <button
+                        key={hora}
+                        type="button"
+                        disabled={ocupado}
+                        onClick={() => handleHoraSelect(hora)}
+                        className={`py-2 rounded-xl font-bold text-sm transition-all duration-300 border-2 
+                          ${ocupado 
+                            ? 'bg-gray-100 border-gray-100 text-gray-400 cursor-not-allowed opacity-60' 
+                            : seleccionado
+                              ? 'bg-sonriendo-teal border-sonriendo-teal text-white shadow-md transform scale-105'
+                              : 'bg-white border-[#e3d1c3] text-gray-600 hover:border-sonriendo-teal hover:text-sonriendo-teal'
+                          }`}
+                      >
+                        {hora}
+                      </button>
+                    );
+                  })
+                )}
               </div>
             ) : null}
           </div>
