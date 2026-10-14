@@ -18,19 +18,18 @@ const BookingForm = () => {
   const [edadCalculada, setEdadCalculada] = useState('');
   
   const [horariosOcupados, setHorariosOcupados] = useState([]);
-  const [cargandoHorarios, setCargandoHorarios] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
   // --- LÓGICA DE HORARIOS (date picker + botones) ---
-  // Horario semanal completo según atención del consultorio
+  // PUNTO 7: Horario semanal actualizado
   const HORARIO_SEMANA = {
     0: null, // domingo — cerrado
     1: null, // lunes  — cerrado
-    2: ["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00"], // martes  9am-7pm (cierra a las 8pm)
+    2: ["19:00","20:00"], // martes  7pm y 8pm
     3: null, // miércoles — cerrado
     4: ["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00"], // jueves  9am-7pm (cierra a las 8pm)
-    5: ["19:00","20:00"], // viernes 7pm-8pm (cierra a las 9pm)
-    6: ["19:00","20:00"]  // sábado  7pm-8pm (cierra a las 9pm)
+    5: ["19:00","20:00"], // viernes 7pm y 8pm
+    6: ["19:00","20:00"]  // sábado  7pm y 8pm
   };
 
   // Estado de los horarios que se muestran para el día seleccionado
@@ -82,13 +81,9 @@ const BookingForm = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-
-    // NOTA: la lógica de ocupados por día se calcula en el onChange del date picker.
-    // No consultamos BD aquí para no pisar esa lógica.
   };
 
   const consultarDisponibilidad = async (fecha) => {
-    setCargandoHorarios(true);
     try {
       const { data, error } = await supabase
         .from('citas')
@@ -103,8 +98,6 @@ const BookingForm = () => {
       }
     } catch (error) {
       console.error("Error al consultar disponibilidad:", error);
-    } finally {
-      setCargandoHorarios(false);
     }
   };
 
@@ -118,8 +111,7 @@ const BookingForm = () => {
     const dia = new Date(fecha + 'T12:00:00').getDay();
     const horariosHabilitados = HORARIO_SEMANA[dia] || [];
     setHorariosDelDia(horariosHabilitados);
-    // Las horas ya ocupadas las consultamos desde BD (consultarDisponibilidad)
-    // Aquí solo pre-filtramos si el día no tiene horario
+    
     if (horariosHabilitados.length === 0) {
       // Día cerrado: marcar todas las horas imaginarias como "ocupadas" para que no se puedan clicar
       setHorariosOcupados(["00:00"]);
@@ -130,24 +122,6 @@ const BookingForm = () => {
 
   const handleHoraSelect = (hora) => {
     setFormData({ ...formData, horaPropuesta: hora });
-  };
-
-  // Calcula la próxima fecha real (YYYY-MM-DD) para un día de la semana dado
-  const calcularFechaProxima = (diaKey) => {
-    const hoy = new Date();
-    const resultado = new Date(hoy);
-    let diasSumar = (diaKey - hoy.getDay() + 7) % 7;
-    if (diasSumar === 0) diasSumar = 7; // si es hoy, ir a la próxima semana
-    resultado.setDate(hoy.getDate() + diasSumar);
-    return resultado.toISOString().slice(0, 10);
-  };
-
-  // Al hacer clic en una celda disponible: fija día + hora
-  const seleccionarCelda = (diaKey, hora) => {
-    const horariosHabilitados = HORARIO_SEMANA[diaKey];
-    if (!horariosHabilitados || horariosHabilitados.length === 0) return;
-    const fecha = calcularFechaProxima(diaKey);
-    setFormData({ ...formData, fechaPropuesta: fecha, horaPropuesta: hora });
   };
 
   // --- NUEVA LÓGICA: ENVÍO DE CORREO A LA DOCTORA ---
@@ -250,7 +224,7 @@ const BookingForm = () => {
       
       // Limpiar formulario
       setFormData({
-        nombrePadre: '', nombreNino: '', telefono: '', motivo: '', fechaPropuesta: '', horaPropuesta: ''
+        nombrePadre: '', nombreNino: '', telefono: '', correo: '', motivo: '', fechaPropuesta: '', horaPropuesta: ''
       });
       setFechaNacimiento('');
       setEdadCalculada('');

@@ -3,13 +3,41 @@
 export default function Diente({ numero, tratamientos, onClickCara, posicion = 'superior' }) {
   const esDeciduo = numero >= 50 && numero <= 85; // piezas de leche (51-65, 71-85)
 
-  const obtenerColor = (cara) => {
+ const obtenerColor = (cara) => {
     const tratamiento = tratamientos.find(t => t.cara === cara);
     if (!tratamiento) return 'bg-white';
-    if (tratamiento.procedimiento.toLowerCase().includes('caries') || tratamiento.procedimiento.toLowerCase().includes('curación')) return 'bg-red-500 border-red-700';
-    if (tratamiento.procedimiento.toLowerCase().includes('sellante')) return 'bg-blue-500 border-blue-700';
-    if (tratamiento.procedimiento.toLowerCase().includes('exodoncia') || tratamiento.procedimiento.toLowerCase().includes('extracción')) return 'bg-black border-black';
-    return 'bg-amber-500 border-amber-700';
+    
+    const proc = tratamiento.procedimiento.toLowerCase();
+
+    // Curaciones / Caries (Rojo)
+    if (proc.includes('caries') || proc.includes('curación')) return 'bg-red-500 border-red-700';
+    
+    // Sellantes (Azul oscuro)
+    if (proc.includes('sellante')) return 'bg-blue-600 border-blue-800';
+    
+    // Exodoncias / Extracciones (Negro)
+    if (proc.includes('exodoncia') || proc.includes('extracción')) return 'bg-black border-black';
+    
+    // Radiografías (Morado)
+    if (proc.includes('radiografía') || proc.includes('rayos')) return 'bg-purple-500 border-purple-700';
+    
+    // Flúor (Verde)
+    if (proc.includes('flúor') || proc.includes('fluor')) return 'bg-green-500 border-green-700';
+    
+    // Profilaxis / Destartraje / Limpieza (Celeste/Teal)
+    if (proc.includes('profilaxis') || proc.includes('destartraje') || proc.includes('limpieza')) return 'bg-teal-400 border-teal-600';
+    
+    // Tratamientos Pulpares / Endodoncia (Naranja)
+    if (proc.includes('pulpectomía') || proc.includes('pulpotomía') || proc.includes('pulpar')) return 'bg-orange-500 border-orange-700';
+    
+    // Coronas (Amarillo/Oro)
+    if (proc.includes('corona')) return 'bg-yellow-400 border-yellow-600';
+
+    // Sedación (Rosado)
+    if (proc.includes('sedación') || proc.includes('oxido')) return 'bg-pink-400 border-pink-600';
+
+    // Cualquier otro procedimiento (Gris por defecto para evitar confusiones)
+    return 'bg-gray-400 border-gray-600';
   };
 
   // Cuadrícula 3x3 con grid CSS: imposible que se desborde
