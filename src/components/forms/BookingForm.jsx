@@ -327,7 +327,7 @@ const BookingForm = () => {
               />
             </div>
           </div>
-
+// Forzando build en Vercel
           <div className="space-y-2 group">
             <label className="text-sm font-bold text-[#6b584a] ml-2">Motivo de Consulta</label>
             <select name="motivo" required value={formData.motivo} className="w-full px-5 py-3 rounded-2xl border-2 border-[#e3d1c3] bg-white text-gray-700 focus:border-sonriendo-teal focus:ring-4 focus:ring-sonriendo-teal/10 outline-none transition-all duration-300 cursor-pointer font-medium" onChange={handleChange}>
