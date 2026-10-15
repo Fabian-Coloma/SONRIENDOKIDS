@@ -69,7 +69,7 @@ const codigosCIE10 = [
   "S02.5 - Fractura de los dientes"
 ];
 
-// PUNTO 8: LISTA ACTUALIZADA DE MEDICAMENTOS + "Otros"
+// LISTA ACTUALIZADA DE MEDICAMENTOS + "Otros"
 const MEDICAMENTOS = [
   'Paracetamol 120mg/5ml jarabe',
   'Panadol 160mg/5ml jarabe',
@@ -112,13 +112,13 @@ export default function AdminHistorial() {
 
   const [hc, setHc] = useState({
     nombres: '', fecha_nacimiento: '', sexo: '', colegio: '',
-    apoderado_nombre: '', apoderado_parentesco: '', apoderado_dni: '', apoderado_ocupacion: '',
+    apoderado_nombre: '', apoderado_parentesco: '', apoderado_dni: '', apoderado_ocupacion: '', estado_civil: '',
     telefono: '', email: '', domicilio: '', contacto_emergencia: '', telefono_emergencia: '',
-    motivo_consulta: '', historia_enfermedad: '', medicacion_actual: '', alergia_medicamentos: '', hospitalizaciones: '',
+    motivo_consulta: '', historia_enfermedad: '', medicacion_actual: '', alergia_medicamentos: '', hospitalizaciones: '', vacunas: 'Completas',
     primera_vez: 'Si', comportamiento_previo: 'N/A', traumatismos: 'No', traumatismos_detalle: '',
     lactancia_biberon: '', succion_no_nutritiva: 'No', respiracion: 'Nasal', otros_habitos: '',
     frecuencia_cepillado: '2', supervision_cepillado: 'Si', uso_fluor: '', dieta_azucares: '',
-    examen_extraoral: '', examen_intraoral: '', riesgo_caries: 'Medio', diagnostico_plan: ''
+    examen_extraoral: '', examen_intraoral: '', riesgo_caries: 'Medio', diagnostico_plan: '', odontograma: []
   });
 
   const handleChange = (e) => {
@@ -134,7 +134,6 @@ export default function AdminHistorial() {
   useEffect(() => {
     if (datosFormulario) {
       if (datosFormulario.accion === 'cambiar_pestana') {
-        // CORRECCIÓN IMAGEN 1: Agrupar los cambios de estado dentro del setTimeout
         setTimeout(() => {
           setPestañaActiva(datosFormulario.tab); 
           setDatosFormulario({});
@@ -186,6 +185,7 @@ export default function AdminHistorial() {
           .select('*')
           .eq('paciente_id', pacienteIdActual)
           .order('fecha', { ascending: false });
+          
         if (odoData) setOdontogramasSesion(odoData);
 
       } catch (error) {
@@ -197,11 +197,16 @@ export default function AdminHistorial() {
     cargarHistorial();
   }, [pacienteIdActual]);
 
-  const handleGuardar = async () => {
+ const handleGuardar = async (datosActualizados = {}) => {
     setGuardando(true);
     try {
-      const datosParaGuardar = { paciente_id: pacienteIdActual, ...hc };
-      if (datosParaGuardar.fecha_nacimiento === '') datosParaGuardar.fecha_nacimiento = null;
+      // AQUÍ ESTÁ LA MAGIA: Mezclamos el estado actual con los datos frescos del odontograma
+      const hcFresco = { ...hc, ...datosActualizados };
+      const datosParaGuardar = { paciente_id: pacienteIdActual, ...hcFresco };
+      
+      if (!datosParaGuardar.fecha_nacimiento) datosParaGuardar.fecha_nacimiento = null;
+      
+      // Removemos temporalmente datos que pertenecen a la tabla 'pacientes'
       delete datosParaGuardar.nombres;
       delete datosParaGuardar.apoderado_nombre;
       delete datosParaGuardar.telefono;
@@ -234,14 +239,12 @@ export default function AdminHistorial() {
       .map(p => `${p.medicamento} — ${p.dosis || 'según indicación'}`)
       .join('\n');
       
-    // CORRECCIÓN IMAGEN 2: Usamos _prescripciones para ignorar la variable extraída pero igual quitarla del objeto.
-    // eslint-disable-next-line no-unused-vars
-    const { prescripciones: _prescripciones, dentista_cop, ...notaLimpia } = nuevaNota;
+    // Limpiamos los datos innecesarios antes de enviar a DB de forma limpia (Sin errores de ESLint)
+    const notaParaGuardar = { ...nuevaNota };
+    delete notaParaGuardar.prescripciones;
+    delete notaParaGuardar.dentista_cop;
     
-    const notaParaGuardar = { 
-      ...notaLimpia, 
-      medicamentos: [prescripcionesTexto, nuevaNota.indicaciones].filter(Boolean).join('\n\n📋 INDICACIONES PARA CASA:\n') || nuevaNota.medicamentos,
-    };
+    notaParaGuardar.medicamentos = [prescripcionesTexto, nuevaNota.indicaciones].filter(Boolean).join('\n\n📋 INDICACIONES PARA CASA:\n') || nuevaNota.medicamentos;
 
     setGuardandoNota(true);
     try {
@@ -371,20 +374,22 @@ export default function AdminHistorial() {
       doc.text(`Total a Pagar: S/ ${totalMonto}`, 14, finalY + 15);
       doc.save(`Proforma_${(hc.nombres || 'Paciente').replace(/\s+/g, '_')}.pdf`);
 
-     if (!hc.telefono || hc.telefono.trim() === '') {
+     // Null Safety para evitar error de `.replace` en variable indefinida
+     const telefonoSeguro = hc.telefono || ''; 
+     
+     if (telefonoSeguro.trim() === '') {
       alert('Odontograma y PDF guardados.\n\nNota: No se pudo abrir WhatsApp porque el paciente no tiene un número registrado.');
-    } else {
-      const numeroLimpio = hc.telefono.replace(/\D/g, '');
+     } else {
+      const numeroLimpio = telefonoSeguro.replace(/\D/g, '');
       const numeroWspp = numeroLimpio.startsWith('51') ? numeroLimpio : `51${numeroLimpio}`;
       const mensaje = `¡Hola! Soy la Dra. Patricia Mora, te escribimos de Sonriendo Kids. Hemos evaluado a ${hc.nombres} y por este medio te adjunto la proforma de su tratamiento.`;
       const wsppUrl = `https://wa.me/${numeroWspp}?text=${encodeURIComponent(mensaje)}`;
       window.open(wsppUrl, '_blank');
-    }
+     }
 
     alert("¡Odontograma guardado y PDF generado!\n\nSe abrirá WhatsApp en una nueva pestaña.");
     
     } catch { 
-      // CORRECCIÓN IMAGEN 3: Quitado el (error) porque no lo usabas
       alert("Error al procesar la información.");
     }
   };
@@ -409,7 +414,7 @@ export default function AdminHistorial() {
         </button>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 h-full min-h-150">
+      <div className="flex flex-col lg:flex-row gap-6 h-full min-h-[600px]">
         
         <div className="w-full lg:w-64 flex flex-col gap-2 shrink-0">
           {tabs.map(tab => (
@@ -562,7 +567,8 @@ export default function AdminHistorial() {
                 </button>
               </div>
 
-              <OdontogramaInteractivo isOpen={modalOdontogramaAbierto} pacienteId={pacienteIdActual}
+              {/* ===== AQUÍ ESTÁ EL CAMBIO PRINCIPAL PARA GUARDAR EN LA BD ===== */}
+             <OdontogramaInteractivo isOpen={modalOdontogramaAbierto} pacienteId={pacienteIdActual}
                 onClose={() => {
                   setModalOdontogramaAbierto(false);
                   if (irAEvolucionTrasConfirmar) {
@@ -570,7 +576,14 @@ export default function AdminHistorial() {
                     setPestañaActiva('evolucion');
                   }
                 }} 
-                onGuardar={procesarFinanzasOdontograma} carritoGuardado={hc.odontograma} onPresupuestoConfirmado={() => setIrAEvolucionTrasConfirmar(true)}
+                onGuardar={async (carrito, total) => {
+                  // 1. Genera el PDF y actualiza el estado de react
+                  await procesarFinanzasOdontograma(carrito, total);
+                  
+                  // 2. Le inyectamos directamente el carrito fresco a la base de datos
+                  await handleGuardar({ odontograma: carrito });
+                }} 
+                carritoGuardado={hc.odontograma} onPresupuestoConfirmado={() => setIrAEvolucionTrasConfirmar(true)}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">

@@ -40,17 +40,20 @@ function SortableCartItem({ item, eliminarProcedimiento }) {
 
 export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, carritoGuardado = [], onPresupuestoConfirmado, pacienteId }) {
   const [carrito, setCarrito] = useState([]);
-  const [descuento, setDescuento] = useState(0); // NUEVO: Estado para el descuento
+  const [descuento, setDescuento] = useState(0); 
 
   const [modalProc, setModalProc] = useState({ abierto: false, diente: null, cara: null });
-  const [modalOtros, setModalOtros] = useState(false); // NUEVO: Modal para "Otros"
-  const [modalDescuento, setModalDescuento] = useState(false); // NUEVO: Modal para "Descuento"
-  const [otroProc, setOtroProc] = useState({ nombre: '', precio: '' }); // NUEVO: Datos de "Otros"
+  const [modalOtros, setModalOtros] = useState(false); 
+  const [modalDescuento, setModalDescuento] = useState(false); 
+  const [otroProc, setOtroProc] = useState({ nombre: '', precio: '' }); 
 
   const [modalConsentimiento, setModalConsentimiento] = useState(false);
   const [consentimientoSeleccionado, setConsentimientoSeleccionado] = useState('');
   const [procedimientoSeleccionado, setProcedimientoSeleccionado] = useState('');
   const [catalogo, setCatalogo] = useState(CATALOGO_PROCEDIMIENTOS);
+  
+  // NUEVO: Estado para saber si se está guardando y evitar clics dobles
+  const [isGuardando, setIsGuardando] = useState(false);
 
   // Sensores para el Drag and Drop
   const sensors = useSensors(
@@ -94,26 +97,23 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
     setModalProc({ abierto: true, diente, cara });
   };
 
-  // PUNTO 2: Agregar y agrupar automáticamente
   const agregarProcedimiento = () => {
     if (!procedimientoSeleccionado) return;
     const procedData = catalogo.find(p => p.nombre === procedimientoSeleccionado);
     
     setCarrito(prevCarrito => {
       const nuevoCarrito = [...prevCarrito, {
-        id: Date.now().toString(), // dnd-kit requiere IDs como string preferiblemente
+        id: Date.now().toString(), 
         diente: modalProc.diente, 
         cara: modalProc.cara,
         procedimiento: procedData.nombre, 
         precio: Number(procedData.precio)
       }];
-      // Agrupación automática por nombre de procedimiento
       return nuevoCarrito.sort((a, b) => a.procedimiento.localeCompare(b.procedimiento));
     });
     setModalProc({ abierto: false, diente: null, cara: null });
   };
 
-  // PUNTO 3: Agregar tratamiento "Otro"
   const agregarOtroProcedimiento = () => {
     if (!otroProc.nombre || !otroProc.precio) return;
     setCarrito(prev => {
@@ -134,7 +134,6 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
     setCarrito(prevCarrito => prevCarrito.filter(item => item.id !== id));
   };
 
-  // PUNTO 2: Manejar el evento de soltar al arrastrar
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (active.id !== over.id) {
@@ -146,13 +145,73 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
     }
   };
 
-  // PUNTO 3: Cálculos de totales con descuento
   const subtotal = carrito.reduce((suma, item) => suma + item.precio, 0);
   const totalProforma = Math.max(0, subtotal - descuento);
   const obtenerTratamientosDiente = (num) => carrito.filter(item => item.diente === num);
 
-  const handleGuardarFinanzas = () => {
+  // NUEVO: Función compartida para generar y subir a Supabase el Odontograma PDF
+  const generarYGuardarPDFOdontograma = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      doc.setFontSize(20); doc.setTextColor(0, 59, 92);
+      doc.text('Sonriendo Kids', 14, 22);
+      doc.setFontSize(10); doc.setTextColor(120);
+      doc.text('Odontopediatría · sonriendokids.fun', 14, 29);
+      doc.setDrawColor(74, 107, 83); doc.line(14, 33, 196, 33);
+      doc.setFontSize(14); doc.setTextColor(0);
+      doc.text('ODONTOGRAMA Y PRESUPUESTO', 14, 42);
+      doc.setFontSize(11); doc.setTextColor(60);
+      doc.text(`Fecha: ${new Date().toLocaleDateString('es-PE')}`, 14, 52);
+      let y = 64;
+      doc.setFontSize(12); doc.setTextColor(0, 59, 92);
+      doc.text('Tratamientos:', 14, y); y += 8;
+      doc.setFontSize(11); doc.setTextColor(40);
+      carrito.forEach(item => {
+        const detallePieza = item.diente ? `Pieza ${item.diente} (${item.cara}) - ` : '';
+        doc.text(`${detallePieza}${item.procedimiento}: S/ ${item.precio}`, 18, y);
+        y += 7;
+      });
+      y += 4;
+      
+      if (descuento > 0) {
+        doc.setTextColor(220, 38, 38); 
+        doc.text(`Descuento: - S/ ${descuento}`, 14, y);
+        y += 8;
+      }
+
+      doc.setFontSize(14); doc.setTextColor(0, 59, 92);
+      doc.text(`TOTAL A PAGAR: S/ ${totalProforma}`, 14, y);
+
+      const pdfBlob = doc.output('blob');
+      const fileName = `odontograma_${Date.now()}.pdf`;
+      const { data: up } = await supabase.storage.from('odontogramas').upload(`sesiones/${fileName}`, pdfBlob, { contentType: 'application/pdf', upsert: true }).catch(() => ({ data: null }));
+      
+      if (up) {
+        const pdfUrl = supabase.storage.from('odontogramas').getPublicUrl(`sesiones/${fileName}`).data.publicUrl;
+        
+        await supabase.from('odontogramas_sesion').insert([{
+          paciente_id: pacienteId,
+          fecha: new Date().toISOString().slice(0, 10),
+          monto_total: totalProforma,
+          detalle: carrito,
+          pdf_url: pdfUrl
+        }]).catch(() => {});
+      }
+    } catch (error) {
+      console.error("Error al generar o subir el PDF", error);
+    }
+  };
+
+  // CORREGIDO: Ahora genera el PDF, guarda en Supabase, y luego cierra
+  const handleGuardarFinanzas = async () => {
+    setIsGuardando(true);
+    // 1. Guardar el PDF y la sesión en la Base de Datos automáticamente
+    await generarYGuardarPDFOdontograma();
+    // 2. Avisar al componente padre y pasar la data actual
     onGuardar(carrito, totalProforma);
+    // 3. Cerrar el modal
+    setIsGuardando(false);
     onClose(); 
   };
 
@@ -178,56 +237,15 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
     }
   };
 
+  // CORREGIDO: Ahora usa la función compartida para subir el PDF
   const imprimirConsentimiento = async () => {
     if (!consentimientoSeleccionado) return;
-    const { jsPDF } = await import('jspdf');
-    const doc = new jsPDF();
-    doc.setFontSize(20); doc.setTextColor(0, 59, 92);
-    doc.text('Sonriendo Kids', 14, 22);
-    doc.setFontSize(10); doc.setTextColor(120);
-    doc.text('Odontopediatría · sonriendokids.fun', 14, 29);
-    doc.setDrawColor(74, 107, 83); doc.line(14, 33, 196, 33);
-    doc.setFontSize(14); doc.setTextColor(0);
-    doc.text('ODONTOGRAMA Y PRESUPUESTO', 14, 42);
-    doc.setFontSize(11); doc.setTextColor(60);
-    doc.text(`Fecha: ${new Date().toLocaleDateString('es-PE')}`, 14, 52);
-    let y = 64;
-    doc.setFontSize(12); doc.setTextColor(0, 59, 92);
-    doc.text('Tratamientos:', 14, y); y += 8;
-    doc.setFontSize(11); doc.setTextColor(40);
-    carrito.forEach(item => {
-      const detallePieza = item.diente ? `Pieza ${item.diente} (${item.cara}) - ` : '';
-      doc.text(`${detallePieza}${item.procedimiento}: S/ ${item.precio}`, 18, y);
-      y += 7;
-    });
-    y += 4;
+    setIsGuardando(true);
     
-    if (descuento > 0) {
-      doc.setTextColor(220, 38, 38); // Rojo para descuento
-      doc.text(`Descuento: - S/ ${descuento}`, 14, y);
-      y += 8;
-    }
-
-    doc.setFontSize(14); doc.setTextColor(0, 59, 92);
-    doc.text(`TOTAL A PAGAR: S/ ${totalProforma}`, 14, y);
-
-    const pdfBlob = doc.output('blob');
-    const fileName = `odontograma_${Date.now()}.pdf`;
-  const { data: up } = await supabase.storage.from('odontogramas').upload(`sesiones/${fileName}`, pdfBlob, { contentType: 'application/pdf', upsert: true }).catch(() => ({ data: null }));
+    await generarYGuardarPDFOdontograma();
     
-    if (up) {
-      // Declaramos la variable directamente aquí adentro usando const
-      const pdfUrl = supabase.storage.from('odontogramas').getPublicUrl(`sesiones/${fileName}`).data.publicUrl;
-      
-      await supabase.from('odontogramas_sesion').insert([{
-        paciente_id: pacienteId,
-        fecha: new Date().toISOString().slice(0, 10),
-        monto_total: totalProforma,
-        detalle: carrito,
-        pdf_url: pdfUrl
-      }]).catch(() => {});
-    }
     if (onPresupuestoConfirmado) onPresupuestoConfirmado();
+    setIsGuardando(false);
     setModalConsentimiento(false);
     onClose();
   };
@@ -304,7 +322,6 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
                <h3 className="text-lg font-black text-[#003B5C] flex items-center gap-2">
                  <span className="material-symbols-outlined">receipt_long</span> Procedimientos
                </h3>
-               {/* BOTÓN OTROS */}
                <button onClick={() => setModalOtros(true)} className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-md hover:bg-blue-200 flex items-center gap-1">
                  <span className="material-symbols-outlined text-[14px]">add</span> Otros
                </button>
@@ -334,7 +351,6 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
                 <span className="font-bold">S/ {subtotal}</span>
               </div>
 
-              {/* BOTÓN DESCUENTO */}
               <div className="flex justify-between items-center px-2">
                 <button onClick={() => setModalDescuento(true)} className="text-red-500 hover:text-red-700 text-xs font-bold flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">sell</span> Agregar Descuento
@@ -347,12 +363,21 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
                 <span className="text-2xl font-black text-[#003B5C]">S/ {totalProforma}</span>
               </div>
 
-              <button onClick={handleGuardarFinanzas} disabled={carrito.length === 0} className="w-full py-3 rounded-xl text-white bg-green-600 hover:bg-green-700 font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-md">
-                <span className="material-symbols-outlined">save</span> Guardar y Enviar PDF
+              {/* CORREGIDO: Botón dinámico con estado "Guardando..." */}
+              <button 
+                onClick={handleGuardarFinanzas} 
+                disabled={carrito.length === 0 || isGuardando} 
+                className="w-full py-3 rounded-xl text-white bg-green-600 hover:bg-green-700 font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-md transition-colors">
+                {isGuardando ? (
+                  <><span className="material-symbols-outlined animate-spin" style={{ animation: "spin 1s linear infinite" }}>sync</span> Guardando...</>
+                ) : (
+                  <><span className="material-symbols-outlined">save</span> Guardar y Enviar PDF</>
+                )}
               </button>
 
-              <button onClick={confirmarPresupuesto}
-                disabled={carrito.length === 0}
+              <button 
+                onClick={confirmarPresupuesto}
+                disabled={carrito.length === 0 || isGuardando}
                 className="w-full py-3 rounded-xl text-white bg-[#f4a261] hover:bg-[#e76f51] font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-md">
                 <span className="material-symbols-outlined">verified</span> Confirmar Presupuesto
               </button>
@@ -361,9 +386,7 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
         </div>
       </div>
 
-      {/* MODALES DE INTERACCIÓN */}
-
-      {/* Modal Procedimiento del Diente */}
+      {/* MODAL PROCEDIMIENTO DEL DIENTE */}
       {modalProc.abierto && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 w-[350px] shadow-2xl scale-105">
@@ -428,7 +451,7 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
        </div>
       )}
 
-      {/* Modal de consentimientos */}
+      {/* MODAL DE CONSENTIMIENTOS */}
       {modalConsentimiento && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-[420px] shadow-2xl">
@@ -479,9 +502,14 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
                   if (c) window.open(c.archivo, '_blank');
                   imprimirConsentimiento();
                 }}
+                disabled={isGuardando}
                 className={`flex-1 py-2.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-1 ${
                   consentimientoSeleccionado ? 'bg-[#003B5C] hover:bg-[#002a42]' : 'bg-gray-300 pointer-events-none'}`}>
-                <span className="material-symbols-outlined text-base">download</span> Imprimir
+                {isGuardando ? (
+                  <><span className="material-symbols-outlined animate-spin" style={{ animation: "spin 1s linear infinite" }}>sync</span> Guardando...</>
+                ) : (
+                  <><span className="material-symbols-outlined text-base">download</span> Imprimir</>
+                )}
               </button>
             </div>
           </div>
