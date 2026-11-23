@@ -3,20 +3,17 @@ import Diente from './Diente';
 import { CATALOGO_PROCEDIMIENTOS } from './catalogoProcedimientos';
 import { supabase } from '../../supabase';
 
-// --- IMPORTACIONES PARA EL DRAG & DROP ---
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// --- COMPONENTE INDIVIDUAL ARRASTRABLE DEL CARRITO ---
-function SortableCartItem({ item, eliminarProcedimiento }) {
+function SortableCartItem({ item, quitarDelPresupuesto }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
   return (
-    <div ref={setNodeRef} style={style} className="bg-gray-50 p-3 rounded-xl border border-gray-200 flex justify-between items-center hover:border-blue-300 mb-2 relative bg-white z-10">
+    <div ref={setNodeRef} style={style} className="p-3 rounded-xl border border-gray-200 flex justify-between items-center hover:border-blue-300 mb-2 relative bg-white z-10">
       <div className="flex items-center gap-3">
-        {/* Botón de arrastre */}
         <div {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-[#003B5C] flex items-center">
           <span className="material-symbols-outlined">drag_indicator</span>
         </div>
@@ -30,7 +27,11 @@ function SortableCartItem({ item, eliminarProcedimiento }) {
       </div>
       <div className="flex items-center gap-2">
         <span className="font-black text-[#003B5C]">S/ {item.precio}</span>
-        <button onClick={() => eliminarProcedimiento(item.id)} className="text-red-400 hover:text-red-600 p-1">
+        <button
+          onClick={() => quitarDelPresupuesto(item.id)}
+          title="Quitar solo de este presupuesto (se mantiene en el odontograma)"
+          className="text-red-400 hover:text-red-600 p-1"
+        >
           <span className="material-symbols-outlined block text-sm">delete</span>
         </button>
       </div>
@@ -39,23 +40,23 @@ function SortableCartItem({ item, eliminarProcedimiento }) {
 }
 
 export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, carritoGuardado = [], onPresupuestoConfirmado, pacienteId }) {
+  // historialOdontograma: todos los hallazgos/tratamientos registrados en la boca (pendientes y realizados)
+  const [historialOdontograma, setHistorialOdontograma] = useState([]);
+  // carrito: únicamente los tratamientos que se van a cotizar/imprimir en esta sesión
   const [carrito, setCarrito] = useState([]);
-  const [descuento, setDescuento] = useState(0); 
+  const [descuento, setDescuento] = useState(0);
 
   const [modalProc, setModalProc] = useState({ abierto: false, diente: null, cara: null });
-  const [modalOtros, setModalOtros] = useState(false); 
-  const [modalDescuento, setModalDescuento] = useState(false); 
-  const [otroProc, setOtroProc] = useState({ nombre: '', precio: '' }); 
+  const [modalOtros, setModalOtros] = useState(false);
+  const [modalDescuento, setModalDescuento] = useState(false);
+  const [otroProc, setOtroProc] = useState({ nombre: '', precio: '' });
 
   const [modalConsentimiento, setModalConsentimiento] = useState(false);
   const [consentimientoSeleccionado, setConsentimientoSeleccionado] = useState('');
   const [procedimientoSeleccionado, setProcedimientoSeleccionado] = useState('');
   const [catalogo, setCatalogo] = useState(CATALOGO_PROCEDIMIENTOS);
-  
-  // NUEVO: Estado para saber si se está guardando y evitar clics dobles
   const [isGuardando, setIsGuardando] = useState(false);
 
-  // Sensores para el Drag and Drop
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -66,15 +67,24 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
       try {
         const { data } = await supabase.from('precios').select('*').order('id');
         if (data && data.length > 0) setCatalogo(data);
-      } catch { /* tabla aún no creada → usa catálogo local */ }
+      } catch { /* usa catálogo local */ }
     })();
   }, []);
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => setCarrito(carritoGuardado || []), 0);
+      const listaInicial = (carritoGuardado || []).map(item => ({
+        ...item,
+        realizado: Boolean(item.realizado)
+      }));
+      setTimeout(() => {
+        setHistorialOdontograma(listaInicial);
+        // Al abrir, cargamos en el presupuesto solo los tratamientos aún pendientes
+        setCarrito(listaInicial.filter(item => !item.realizado));
+        setDescuento(0);
+      }, 0);
     }
-  }, [isOpen]);
+  }, [isOpen, carritoGuardado]);
 
   const adultoSuperiorDerecho = [18, 17, 16, 15, 14, 13, 12, 11];
   const adultoSuperiorIzquierdo = [21, 22, 23, 24, 25, 26, 27, 28];
@@ -97,46 +107,61 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
     setModalProc({ abierto: true, diente, cara });
   };
 
+  // Agrega el tratamiento tanto al historial clínico del diente como al presupuesto actual
   const agregarProcedimiento = () => {
     if (!procedimientoSeleccionado) return;
     const procedData = catalogo.find(p => p.nombre === procedimientoSeleccionado);
-    
-    setCarrito(prevCarrito => {
-      const nuevoCarrito = [...prevCarrito, {
-        id: Date.now().toString(), 
-        diente: modalProc.diente, 
-        cara: modalProc.cara,
-        procedimiento: procedData.nombre, 
-        precio: Number(procedData.precio)
-      }];
-      return nuevoCarrito.sort((a, b) => a.procedimiento.localeCompare(b.procedimiento));
-    });
+    const nuevoItem = {
+      id: Date.now().toString(),
+      diente: modalProc.diente,
+      cara: modalProc.cara,
+      procedimiento: procedData.nombre,
+      precio: Number(procedData.precio),
+      realizado: false
+    };
+
+    setHistorialOdontograma(prev => [...prev, nuevoItem]);
+    setCarrito(prev => [...prev, nuevoItem].sort((a, b) => a.procedimiento.localeCompare(b.procedimiento)));
     setModalProc({ abierto: false, diente: null, cara: null });
   };
 
   const agregarOtroProcedimiento = () => {
     if (!otroProc.nombre || !otroProc.precio) return;
-    setCarrito(prev => {
-      const nuevo = [...prev, {
-        id: Date.now().toString(),
-        diente: null,
-        cara: null,
-        procedimiento: otroProc.nombre,
-        precio: Number(otroProc.precio)
-      }];
-      return nuevo.sort((a, b) => a.procedimiento.localeCompare(b.procedimiento));
-    });
+    const nuevoItem = {
+      id: Date.now().toString(),
+      diente: null,
+      cara: null,
+      procedimiento: otroProc.nombre,
+      precio: Number(otroProc.precio),
+      realizado: false
+    };
+
+    setHistorialOdontograma(prev => [...prev, nuevoItem]);
+    setCarrito(prev => [...prev, nuevoItem].sort((a, b) => a.procedimiento.localeCompare(b.procedimiento)));
     setModalOtros(false);
     setOtroProc({ nombre: '', precio: '' });
   };
 
-  const eliminarProcedimiento = (id) => {
+  // Solo quita el ítem de la cotización/presupuesto actual SIN borrarlo del odontograma
+  const quitarDelPresupuesto = (id) => {
     setCarrito(prevCarrito => prevCarrito.filter(item => item.id !== id));
+  };
+
+  // Borra definitivamente un registro del diente (por si se marcó por error en el odontograma)
+  const eliminarDelOdontograma = (id) => {
+    setHistorialOdontograma(prev => prev.filter(item => item.id !== id));
+    setCarrito(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Permite volver a incluir un pendiente del odontograma al presupuesto actual
+  const cotizarPendienteExistente = (item) => {
+    if (carrito.some(c => c.id === item.id)) return;
+    setCarrito(prev => [...prev, item].sort((a, b) => a.procedimiento.localeCompare(b.procedimiento)));
   };
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) {
       setCarrito((items) => {
         const oldIndex = items.findIndex(item => item.id === active.id);
         const newIndex = items.findIndex(item => item.id === over.id);
@@ -147,10 +172,15 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
 
   const subtotal = carrito.reduce((suma, item) => suma + item.precio, 0);
   const totalProforma = Math.max(0, subtotal - descuento);
-  const obtenerTratamientosDiente = (num) => carrito.filter(item => item.diente === num);
+  const obtenerTratamientosDiente = (num) => historialOdontograma.filter(item => item.diente === num);
 
-  // NUEVO: Función compartida para generar y subir a Supabase el Odontograma PDF
-  const generarYGuardarPDFOdontograma = async () => {
+  // Tratamientos registrados en esa pieza/cara para mostrarlos en el modal del diente
+  const registrosEnCaraActual = historialOdontograma.filter(
+    item => item.diente === modalProc.diente && item.cara === modalProc.cara
+  );
+
+  // Genera el PDF solo con los procedimientos seleccionados en el presupuesto actual (carrito)
+  const generarYGuardarPDFOdontograma = async (historialActualizado = historialOdontograma) => {
     try {
       const { jsPDF } = await import('jspdf');
       const doc = new jsPDF();
@@ -165,7 +195,7 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
       doc.text(`Fecha: ${new Date().toLocaleDateString('es-PE')}`, 14, 52);
       let y = 64;
       doc.setFontSize(12); doc.setTextColor(0, 59, 92);
-      doc.text('Tratamientos:', 14, y); y += 8;
+      doc.text('Tratamientos presupuestados:', 14, y); y += 8;
       doc.setFontSize(11); doc.setTextColor(40);
       carrito.forEach(item => {
         const detallePieza = item.diente ? `Pieza ${item.diente} (${item.cara}) - ` : '';
@@ -173,9 +203,9 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
         y += 7;
       });
       y += 4;
-      
+
       if (descuento > 0) {
-        doc.setTextColor(220, 38, 38); 
+        doc.setTextColor(220, 38, 38);
         doc.text(`Descuento: - S/ ${descuento}`, 14, y);
         y += 8;
       }
@@ -186,33 +216,30 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
       const pdfBlob = doc.output('blob');
       const fileName = `odontograma_${Date.now()}.pdf`;
       const { data: up } = await supabase.storage.from('odontogramas').upload(`sesiones/${fileName}`, pdfBlob, { contentType: 'application/pdf', upsert: true }).catch(() => ({ data: null }));
-      
+
       if (up) {
         const pdfUrl = supabase.storage.from('odontogramas').getPublicUrl(`sesiones/${fileName}`).data.publicUrl;
-        
+
         await supabase.from('odontogramas_sesion').insert([{
           paciente_id: pacienteId,
           fecha: new Date().toISOString().slice(0, 10),
           monto_total: totalProforma,
-          detalle: carrito,
+          detalle: historialActualizado,
           pdf_url: pdfUrl
         }]).catch(() => {});
       }
     } catch (error) {
-      console.error("Error al generar o subir el PDF", error);
+      console.error('Error al generar o subir el PDF', error);
     }
   };
 
-  // CORREGIDO: Ahora genera el PDF, guarda en Supabase, y luego cierra
   const handleGuardarFinanzas = async () => {
     setIsGuardando(true);
-    // 1. Guardar el PDF y la sesión en la Base de Datos automáticamente
-    await generarYGuardarPDFOdontograma();
-    // 2. Avisar al componente padre y pasar la data actual
-    onGuardar(carrito, totalProforma);
-    // 3. Cerrar el modal
+    await generarYGuardarPDFOdontograma(historialOdontograma);
+    // Persistimos todo el historial del odontograma en el paciente
+    if (onGuardar) onGuardar(historialOdontograma, totalProforma);
     setIsGuardando(false);
-    onClose(); 
+    onClose();
   };
 
   const confirmarPresupuesto = async () => {
@@ -227,7 +254,17 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
         metodo_pago: 'Efectivo',
       }]);
       if (error) throw error;
-      alert(`✅ Ingreso registrado en Finanzas por S/ ${montoNum.toFixed(2)}`);
+
+      // Marcamos los tratamientos cotizados en este presupuesto como REALIZADOS en el odontograma
+      const idsConfirmados = new Set(carrito.map(c => c.id));
+      const historialActualizado = historialOdontograma.map(item =>
+        idsConfirmados.has(item.id) ? { ...item, realizado: true } : item
+      );
+
+      setHistorialOdontograma(historialActualizado);
+      if (onGuardar) onGuardar(historialActualizado, totalProforma);
+
+      alert(`✅ Ingreso registrado en Finanzas por S/ ${montoNum.toFixed(2)}. Los tratamientos quedaron marcados como realizados en el odontograma.`);
       window.dispatchEvent(new Event('finanzas-actualizar'));
       setConsentimientoSeleccionado('');
       setModalConsentimiento(true);
@@ -237,23 +274,26 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
     }
   };
 
-  // CORREGIDO: Ahora usa la función compartida para subir el PDF
   const imprimirConsentimiento = async () => {
     if (!consentimientoSeleccionado) return;
     setIsGuardando(true);
-    
-    await generarYGuardarPDFOdontograma();
-    
+
+    await generarYGuardarPDFOdontograma(historialOdontograma);
+
     if (onPresupuestoConfirmado) onPresupuestoConfirmado();
     setIsGuardando(false);
     setModalConsentimiento(false);
     onClose();
   };
 
+  const pendientesSinCotizar = historialOdontograma.filter(
+    item => !item.realizado && !carrito.some(c => c.id === item.id)
+  );
+
   return (
     <div className="fixed inset-0 bg-black/75 z-50 p-2 sm:p-4 animate-fade-in backdrop-blur-sm overflow-y-auto h-screen flex items-center justify-center">
       <div className="bg-white w-[98vw] max-w-[1500px] max-h-[95vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden relative">
-        
+
         <div className="bg-[#003B5C] px-6 py-3 flex justify-between items-center shrink-0">
           <h2 className="text-white text-lg font-bold flex items-center gap-2">
             <span className="material-symbols-outlined">dentistry</span> Odontograma Mixto y Cotización
@@ -270,10 +310,10 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
         </div>
 
         <div className="flex-1 flex flex-col lg:flex-row bg-gray-100 overflow-hidden">
-          
-          <div className="flex-1 p-2 lg:p-4 overflow-x-auto scrollbar-hide lg:overflow-hidden flex justify-center items-start min-w-0">
+
+          <div className="flex-1 p-2 lg:p-4 overflow-x-auto scrollbar-hide lg:overflow-hidden flex flex-col justify-center items-center min-w-0">
             <div className="bg-white border border-gray-200 rounded-xl p-4 lg:p-6 shadow-sm flex flex-col items-center w-full max-w-[900px]">
-              
+
               <div className="flex justify-center items-center border-b border-gray-200 pb-4 mb-4 gap-2 lg:gap-4 w-full">
                 <div className="flex-1 flex justify-end gap-1 md:gap-1.5 min-w-0">
                   {adultoSuperiorDerecho.map(num => <Diente key={num} numero={num} tratamientos={obtenerTratamientosDiente(num)} onClickCara={abrirModalProcedimiento} posicion="superior" />)}
@@ -314,38 +354,71 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
                 </div>
               </div>
 
+              {/* Leyenda rápida de estado clínico */}
+              <div className="mt-4 pt-3 border-t border-gray-100 w-full flex flex-wrap justify-between items-center text-[11px] text-gray-500 gap-2">
+                <span>Haz clic en una cara del diente para agregar tratamientos o ver su historial.</span>
+                <span className="inline-flex items-center gap-1.5 font-medium text-emerald-700">
+                  <span className="w-3 h-3 rounded-sm bg-blue-600 ring-2 ring-inset ring-emerald-300 inline-block"></span>
+                  Borde verde interno = Realizado
+                </span>
+              </div>
             </div>
           </div>
 
           <div className="w-full lg:w-[400px] bg-white border-l border-gray-200 p-4 lg:p-6 flex flex-col shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10 shrink-0">
-            <div className="flex justify-between items-center mb-4 border-b pb-3">
-               <h3 className="text-lg font-black text-[#003B5C] flex items-center gap-2">
-                 <span className="material-symbols-outlined">receipt_long</span> Procedimientos
-               </h3>
-               <button onClick={() => setModalOtros(true)} className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-md hover:bg-blue-200 flex items-center gap-1">
-                 <span className="material-symbols-outlined text-[14px]">add</span> Otros
-               </button>
+            <div className="flex justify-between items-center mb-1 border-b pb-3">
+              <div>
+                <h3 className="text-lg font-black text-[#003B5C] flex items-center gap-2">
+                  <span className="material-symbols-outlined">receipt_long</span> Presupuesto Actual
+                </h3>
+                <p className="text-[11px] text-gray-400">Quitar aquí no borra el odontograma</p>
+              </div>
+              <button onClick={() => setModalOtros(true)} className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-md hover:bg-blue-200 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">add</span> Otros
+              </button>
             </div>
-            
-            <div className="flex-1 overflow-y-auto pr-2 mb-4">
+
+            <div className="flex-1 overflow-y-auto pr-2 mb-4 mt-2">
               {carrito.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400 opacity-70">
+                <div className="flex flex-col items-center justify-center h-full text-gray-400 opacity-70 text-center px-4">
                   <span className="material-symbols-outlined text-4xl mb-2">info</span>
-                  <p className="text-sm italic">Sin piezas seleccionadas.</p>
+                  <p className="text-sm italic">Sin procedimientos en este presupuesto.</p>
                 </div>
               ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                   <SortableContext items={carrito.map(i => i.id)} strategy={verticalListSortingStrategy}>
                     {carrito.map(item => (
-                      <SortableCartItem key={item.id} item={item} eliminarProcedimiento={eliminarProcedimiento} />
+                      <SortableCartItem key={item.id} item={item} quitarDelPresupuesto={quitarDelPresupuesto} />
                     ))}
                   </SortableContext>
                 </DndContext>
               )}
+
+              {pendientesSinCotizar.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-dashed border-gray-200">
+                  <p className="text-[11px] font-bold text-gray-500 uppercase mb-2">
+                    Pendientes en odontograma ({pendientesSinCotizar.length})
+                  </p>
+                  <div className="space-y-1.5">
+                    {pendientesSinCotizar.map(item => (
+                      <div key={item.id} className="flex items-center justify-between bg-amber-50/70 border border-amber-200 rounded-lg px-2.5 py-1.5 text-xs">
+                        <span className="text-gray-700 truncate pr-2">
+                          {item.diente ? `P.${item.diente} - ` : ''}{item.procedimiento}
+                        </span>
+                        <button
+                          onClick={() => cotizarPendienteExistente(item)}
+                          className="text-[#003B5C] font-bold hover:underline shrink-0"
+                        >
+                          + Cotizar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="pt-4 border-t border-gray-200 shrink-0 space-y-3">
-              
               <div className="flex justify-between items-center text-gray-500 px-2">
                 <span className="text-sm font-bold">Subtotal:</span>
                 <span className="font-bold">S/ {subtotal}</span>
@@ -363,19 +436,18 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
                 <span className="text-2xl font-black text-[#003B5C]">S/ {totalProforma}</span>
               </div>
 
-              {/* CORREGIDO: Botón dinámico con estado "Guardando..." */}
-              <button 
-                onClick={handleGuardarFinanzas} 
-                disabled={carrito.length === 0 || isGuardando} 
+              <button
+                onClick={handleGuardarFinanzas}
+                disabled={carrito.length === 0 || isGuardando}
                 className="w-full py-3 rounded-xl text-white bg-green-600 hover:bg-green-700 font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-md transition-colors">
                 {isGuardando ? (
-                  <><span className="material-symbols-outlined animate-spin" style={{ animation: "spin 1s linear infinite" }}>sync</span> Guardando...</>
+                  <><span className="material-symbols-outlined animate-spin" style={{ animation: 'spin 1s linear infinite' }}>sync</span> Guardando...</>
                 ) : (
                   <><span className="material-symbols-outlined">save</span> Guardar y Enviar PDF</>
                 )}
               </button>
 
-              <button 
+              <button
                 onClick={confirmarPresupuesto}
                 disabled={carrito.length === 0 || isGuardando}
                 className="w-full py-3 rounded-xl text-white bg-[#f4a261] hover:bg-[#e76f51] font-bold flex items-center justify-center gap-2 disabled:opacity-50 shadow-md">
@@ -386,16 +458,42 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
         </div>
       </div>
 
-      {/* MODAL PROCEDIMIENTO DEL DIENTE */}
+      {/* MODAL PROCEDIMIENTO DEL DIENTE (incluye historial de esa cara para poder borrar solo si fue un error) */}
       {modalProc.abierto && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 w-[350px] shadow-2xl scale-105">
-            <h3 className="text-lg font-black text-[#003B5C] mb-2">Nuevo Tratamiento</h3>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 w-[380px] shadow-2xl">
+            <h3 className="text-lg font-black text-[#003B5C] mb-2">Pieza {modalProc.diente}</h3>
             <div className="bg-blue-50 text-blue-800 px-3 py-1.5 rounded-lg text-sm mb-4 inline-block font-medium">
-              Pieza <strong>{modalProc.diente}</strong> • <strong className="capitalize">{modalProc.cara}</strong>
+              Cara <strong className="capitalize">{modalProc.cara}</strong>
             </div>
-            
-            <select 
+
+            {registrosEnCaraActual.length > 0 && (
+              <div className="mb-4 bg-gray-50 border border-gray-200 rounded-xl p-3">
+                <p className="text-[11px] font-bold text-gray-500 uppercase mb-2">Registrado en esta cara:</p>
+                <div className="space-y-1.5">
+                  {registrosEnCaraActual.map(reg => (
+                    <div key={reg.id} className="flex items-center justify-between text-xs bg-white px-2.5 py-1.5 rounded-lg border border-gray-100">
+                      <div>
+                        <span className="font-bold text-gray-800">{reg.procedimiento}</span>
+                        <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${reg.realizado ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {reg.realizado ? 'Realizado' : 'Pendiente'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => eliminarDelOdontograma(reg.id)}
+                        title="Borrar registro del odontograma"
+                        className="text-red-500 hover:text-red-700 font-bold ml-2"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <label className="block text-xs font-bold text-gray-500 mb-1">Agregar nuevo tratamiento</label>
+            <select
               value={procedimientoSeleccionado} onChange={(e) => setProcedimientoSeleccionado(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-xl mb-6 outline-none focus:border-[#003B5C] bg-gray-50 text-sm"
             >
@@ -403,16 +501,16 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
               {['General', 'Niño', 'Permanente']
                 .filter(cat => catalogoFiltrado.some(p => p.categoria === cat))
                 .map(cat => (
-                <optgroup key={cat} label={`── ${cat} ──`}>
-                  {catalogoFiltrado.filter(p => p.categoria === cat).map(p => (
-                    <option key={p.id} value={p.nombre}>{p.nombre} — S/ {p.precio}</option>
-                  ))}
-                </optgroup>
-              ))}
+                  <optgroup key={cat} label={`── ${cat} ──`}>
+                    {catalogoFiltrado.filter(p => p.categoria === cat).map(p => (
+                      <option key={p.id} value={p.nombre}>{p.nombre} — S/ {p.precio}</option>
+                    ))}
+                  </optgroup>
+                ))}
             </select>
 
             <div className="flex gap-2">
-              <button onClick={() => setModalProc({ abierto: false })} className="flex-1 py-2 rounded-xl text-gray-600 bg-gray-100 font-bold hover:bg-gray-200 text-sm">Cancelar</button>
+              <button onClick={() => setModalProc({ abierto: false })} className="flex-1 py-2 rounded-xl text-gray-600 bg-gray-100 font-bold hover:bg-gray-200 text-sm">Cerrar</button>
               <button onClick={agregarProcedimiento} disabled={!procedimientoSeleccionado} className="flex-1 py-2 rounded-xl text-white bg-[#003B5C] font-bold disabled:opacity-50 text-sm">Agregar</button>
             </div>
           </div>
@@ -421,34 +519,34 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
 
       {/* MODAL OTROS PROCEDIMIENTOS */}
       {modalOtros && (
-         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] backdrop-blur-sm">
-         <div className="bg-white rounded-2xl p-6 w-[350px] shadow-2xl scale-105">
-           <h3 className="text-lg font-black text-[#003B5C] mb-4">Agregar Otro Procedimiento</h3>
-           <label className="block text-xs font-bold text-gray-500 mb-1">Nombre del tratamiento</label>
-           <input type="text" value={otroProc.nombre} onChange={e => setOtroProc({...otroProc, nombre: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-xl mb-4 outline-none focus:border-[#003B5C]" placeholder="Ej. Retiro de Brackets" />
-           <label className="block text-xs font-bold text-gray-500 mb-1">Precio (S/)</label>
-           <input type="number" value={otroProc.precio} onChange={e => setOtroProc({...otroProc, precio: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-xl mb-6 outline-none focus:border-[#003B5C]" placeholder="Ej. 100" />
-           <div className="flex gap-2">
-             <button onClick={() => setModalOtros(false)} className="flex-1 py-2 rounded-xl text-gray-600 bg-gray-100 font-bold hover:bg-gray-200 text-sm">Cancelar</button>
-             <button onClick={agregarOtroProcedimiento} disabled={!otroProc.nombre || !otroProc.precio} className="flex-1 py-2 rounded-xl text-white bg-[#003B5C] font-bold disabled:opacity-50 text-sm">Agregar</button>
-           </div>
-         </div>
-       </div>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-[350px] shadow-2xl scale-105">
+            <h3 className="text-lg font-black text-[#003B5C] mb-4">Agregar Otro Procedimiento</h3>
+            <label className="block text-xs font-bold text-gray-500 mb-1">Nombre del tratamiento</label>
+            <input type="text" value={otroProc.nombre} onChange={e => setOtroProc({ ...otroProc, nombre: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-xl mb-4 outline-none focus:border-[#003B5C]" placeholder="Ej. Retiro de Brackets" />
+            <label className="block text-xs font-bold text-gray-500 mb-1">Precio (S/)</label>
+            <input type="number" value={otroProc.precio} onChange={e => setOtroProc({ ...otroProc, precio: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-xl mb-6 outline-none focus:border-[#003B5C]" placeholder="Ej. 100" />
+            <div className="flex gap-2">
+              <button onClick={() => setModalOtros(false)} className="flex-1 py-2 rounded-xl text-gray-600 bg-gray-100 font-bold hover:bg-gray-200 text-sm">Cancelar</button>
+              <button onClick={agregarOtroProcedimiento} disabled={!otroProc.nombre || !otroProc.precio} className="flex-1 py-2 rounded-xl text-white bg-[#003B5C] font-bold disabled:opacity-50 text-sm">Agregar</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* MODAL DESCUENTO */}
       {modalDescuento && (
-         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] backdrop-blur-sm">
-         <div className="bg-white rounded-2xl p-6 w-[350px] shadow-2xl scale-105">
-           <h3 className="text-lg font-black text-red-500 mb-4">Aplicar Descuento</h3>
-           <p className="text-sm text-gray-500 mb-4">Ingresa el monto a descontar del presupuesto actual.</p>
-           <input type="number" value={descuento} onChange={e => setDescuento(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-xl mb-6 outline-none focus:border-red-500 text-lg font-bold" placeholder="S/ 0" autoFocus />
-           <div className="flex gap-2">
-             <button onClick={() => setDescuento(0)} className="flex-1 py-2 rounded-xl text-gray-600 bg-gray-100 font-bold hover:bg-gray-200 text-sm">Quitar</button>
-             <button onClick={() => setModalDescuento(false)} className="flex-1 py-2 rounded-xl text-white bg-red-500 hover:bg-red-600 font-bold text-sm">Aplicar</button>
-           </div>
-         </div>
-       </div>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-[350px] shadow-2xl scale-105">
+            <h3 className="text-lg font-black text-red-500 mb-4">Aplicar Descuento</h3>
+            <p className="text-sm text-gray-500 mb-4">Ingresa el monto a descontar del presupuesto actual.</p>
+            <input type="number" value={descuento} onChange={e => setDescuento(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-xl mb-6 outline-none focus:border-red-500 text-lg font-bold" placeholder="S/ 0" autoFocus />
+            <div className="flex gap-2">
+              <button onClick={() => setDescuento(0)} className="flex-1 py-2 rounded-xl text-gray-600 bg-gray-100 font-bold hover:bg-gray-200 text-sm">Quitar</button>
+              <button onClick={() => setModalDescuento(false)} className="flex-1 py-2 rounded-xl text-white bg-red-500 hover:bg-red-600 font-bold text-sm">Aplicar</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* MODAL DE CONSENTIMIENTOS */}
@@ -506,7 +604,7 @@ export default function OdontogramaInteractivo({ isOpen, onClose, onGuardar, car
                 className={`flex-1 py-2.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-1 ${
                   consentimientoSeleccionado ? 'bg-[#003B5C] hover:bg-[#002a42]' : 'bg-gray-300 pointer-events-none'}`}>
                 {isGuardando ? (
-                  <><span className="material-symbols-outlined animate-spin" style={{ animation: "spin 1s linear infinite" }}>sync</span> Guardando...</>
+                  <><span className="material-symbols-outlined animate-spin" style={{ animation: 'spin 1s linear infinite' }}>sync</span> Guardando...</>
                 ) : (
                   <><span className="material-symbols-outlined text-base">download</span> Imprimir</>
                 )}

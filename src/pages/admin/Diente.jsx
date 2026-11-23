@@ -1,46 +1,34 @@
-// Diente.jsx — icono de diente SVG (sin imágenes externas) + cuadrícula de caras sin overflow
+// Diente.jsx — icono de diente SVG + cuadrícula de caras con estado pendiente vs. realizado
 
 export default function Diente({ numero, tratamientos, onClickCara, posicion = 'superior' }) {
-  const esDeciduo = numero >= 50 && numero <= 85; // piezas de leche (51-65, 71-85)
+  const esDeciduo = numero >= 50 && numero <= 85;
 
- const obtenerColor = (cara) => {
+  const obtenerEstiloCara = (cara) => {
     const tratamiento = tratamientos.find(t => t.cara === cara);
-    if (!tratamiento) return 'bg-white';
-    
+    if (!tratamiento) return { clase: 'bg-white', titulo: `Pieza ${numero} (${cara})` };
+
     const proc = tratamiento.procedimiento.toLowerCase();
+    let colorBase = 'bg-gray-400 border-gray-600';
 
-    // Curaciones / Caries (Rojo)
-    if (proc.includes('caries') || proc.includes('curación')) return 'bg-red-500 border-red-700';
-    
-    // Sellantes (Azul oscuro)
-    if (proc.includes('sellante')) return 'bg-blue-600 border-blue-800';
-    
-    // Exodoncias / Extracciones (Negro)
-    if (proc.includes('exodoncia') || proc.includes('extracción')) return 'bg-black border-black';
-    
-    // Radiografías (Morado)
-    if (proc.includes('radiografía') || proc.includes('rayos')) return 'bg-purple-500 border-purple-700';
-    
-    // Flúor (Verde)
-    if (proc.includes('flúor') || proc.includes('fluor')) return 'bg-green-500 border-green-700';
-    
-    // Profilaxis / Destartraje / Limpieza (Celeste/Teal)
-    if (proc.includes('profilaxis') || proc.includes('destartraje') || proc.includes('limpieza')) return 'bg-teal-400 border-teal-600';
-    
-    // Tratamientos Pulpares / Endodoncia (Naranja)
-    if (proc.includes('pulpectomía') || proc.includes('pulpotomía') || proc.includes('pulpar')) return 'bg-orange-500 border-orange-700';
-    
-    // Coronas (Amarillo/Oro)
-    if (proc.includes('corona')) return 'bg-yellow-400 border-yellow-600';
+    if (proc.includes('caries') || proc.includes('curación')) colorBase = 'bg-red-500 border-red-700';
+    else if (proc.includes('sellante')) colorBase = 'bg-blue-600 border-blue-800';
+    else if (proc.includes('exodoncia') || proc.includes('extracción')) colorBase = 'bg-black border-black';
+    else if (proc.includes('radiografía') || proc.includes('rayos')) colorBase = 'bg-purple-500 border-purple-700';
+    else if (proc.includes('flúor') || proc.includes('fluor')) colorBase = 'bg-green-500 border-green-700';
+    else if (proc.includes('profilaxis') || proc.includes('destartraje') || proc.includes('limpieza')) colorBase = 'bg-teal-400 border-teal-600';
+    else if (proc.includes('pulpectomía') || proc.includes('pulpotomía') || proc.includes('pulpar')) colorBase = 'bg-orange-500 border-orange-700';
+    else if (proc.includes('corona')) colorBase = 'bg-yellow-400 border-yellow-600';
+    else if (proc.includes('sedación') || proc.includes('oxido')) colorBase = 'bg-pink-400 border-pink-600';
 
-    // Sedación (Rosado)
-    if (proc.includes('sedación') || proc.includes('oxido')) return 'bg-pink-400 border-pink-600';
+    const estadoTexto = tratamiento.realizado ? 'REALIZADO' : 'PENDIENTE';
+    const marcaRealizado = tratamiento.realizado ? 'ring-2 ring-inset ring-emerald-300 opacity-90' : '';
 
-    // Cualquier otro procedimiento (Gris por defecto para evitar confusiones)
-    return 'bg-gray-400 border-gray-600';
+    return {
+      clase: `${colorBase} ${marcaRealizado}`,
+      titulo: `Pieza ${numero} (${cara}): ${tratamiento.procedimiento} [${estadoTexto}]`
+    };
   };
 
-  // Cuadrícula 3x3 con grid CSS: imposible que se desborde
   const caras = [
     { nombre: 'arriba',    celda: 'col-start-2 row-start-1 rounded-t-lg' },
     { nombre: 'izquierda', celda: 'col-start-1 row-start-2 rounded-l-lg' },
@@ -55,29 +43,30 @@ export default function Diente({ numero, tratamientos, onClickCara, posicion = '
         {numero}
       </span>
 
-      {/* Dientito SVG — contenido dentro del flujo, sin solaparse con la cuadrícula */}
       <div className={`order-2 flex justify-center overflow-visible ${posicion === 'superior' ? 'mb-2' : 'mt-2'} transition-transform duration-300 ease-out group-hover:scale-125 relative z-10`}>
         <svg width="24" height="26" viewBox="0 0 24 32" className="drop-shadow-sm">
-          {/* corona */}
           <path
             d="M12 1 C7 1 3.5 3.5 3.5 8 C3.5 11 4.5 13 5.5 15 C6.6 17.2 6.8 20 7.2 23.5 C7.5 26.5 8.2 31 10 31 C11.8 31 11.2 25.5 12 25.5 C12.8 25.5 12.2 31 14 31 C15.8 31 16.5 26.5 16.8 23.5 C17.2 20 17.4 17.2 18.5 15 C19.5 13 20.5 11 20.5 8 C20.5 3.5 17 1 12 1 Z"
             fill={esDeciduo ? '#CBEAF5' : '#FDFDFD'}
             stroke={esDeciduo ? '#5FB4D9' : '#94A3B8'}
             strokeWidth="1.6"
           />
-          {/* brillito */}
           <ellipse cx="8.2" cy="7" rx="1.6" ry="2.6" fill="#FFFFFF" opacity="0.85" transform="rotate(-20 8.2 7)" />
         </svg>
       </div>
 
-      {/* Cuadrícula de caras: grid 3x3 de 15px, bordes incluidos, sin overflow */}
       <div className={`grid grid-cols-3 z-30 w-[30px] h-[30px] sm:w-[45px] sm:h-[45px] ${posicion === 'superior' ? 'order-3' : 'order-1'}`}>
-        {caras.map(c => (
-          <div key={c.nombre}
-            onClick={() => onClickCara(numero, c.nombre)}
-            className={`w-[10px] h-[10px] sm:w-[15px] sm:h-[15px] border border-gray-400 cursor-pointer transition-colors duration-200 hover:bg-blue-200 ${obtenerColor(c.nombre)} ${c.celda}`}
-          />
-        ))}
+        {caras.map(c => {
+          const estilo = obtenerEstiloCara(c.nombre);
+          return (
+            <div
+              key={c.nombre}
+              title={estilo.titulo}
+              onClick={() => onClickCara(numero, c.nombre)}
+              className={`w-[10px] h-[10px] sm:w-[15px] sm:h-[15px] border border-gray-400 cursor-pointer transition-colors duration-200 hover:bg-blue-200 ${estilo.clase} ${c.celda}`}
+            />
+          );
+        })}
       </div>
     </div>
   );

@@ -1,8 +1,7 @@
 
 // IMPORTANTE: Asegúrate de pasar 'onCambiarFecha' desde tu componente padre (AdminCitas)
 const AgendaSemanal = ({ citas, fechaBase, onCambiarFecha, onAgendarClick, onVerDetalle, onMoverCita, onEliminar }) => {
-  const horas = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
-  
+const horas = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];  
   // Solución de zona horaria: Agregamos T00:00:00 para que JavaScript no desface el día en LATAM
   const baseDateStr = fechaBase.includes('T') ? fechaBase : `${fechaBase}T00:00:00`;
 

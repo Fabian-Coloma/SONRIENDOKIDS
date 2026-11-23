@@ -1,4 +1,4 @@
-// catalogoProcedimientos.js — Precios oficiales del consultorio (fuente: PRECIOS.docx)
+// catalogoProcedimientos.js — Precios oficiales del consultorio
 
 export const CATALOGO_PROCEDIMIENTOS = [
   // ---------- DIENTE DECIDUO (niño) ----------
@@ -8,8 +8,8 @@ export const CATALOGO_PROCEDIMIENTOS = [
   { id: 4,  nombre: 'Exodoncia Simple Niño', categoria: 'Niño', precio: 80 },
   { id: 5,  nombre: 'Exodoncia Compleja Niño', categoria: 'Niño', precio: 140 },
   { id: 6,  nombre: 'Exodoncia Supernumerario', categoria: 'Niño', precio: 250 },
-  { id: 7,  nombre: 'Curación Simple Niño', categoria: 'Niño', precio: 80 },
-  { id: 8,  nombre: 'Curación Compuesta Niño', categoria: 'Niño', precio: 100 },
+  { id: 7,  nombre: 'Curación Simple Niño', categoria: 'Niño', precio: 100 },
+  { id: 8,  nombre: 'Curación Compuesta Niño', categoria: 'Niño', precio: 120 },
   { id: 9,  nombre: 'Curación Compleja Niño', categoria: 'Niño', precio: 160 },
   { id: 10, nombre: 'Pulpectomía', categoria: 'Niño', precio: 220 },
   { id: 11, nombre: 'Pulpotomía', categoria: 'Niño', precio: 200 },
@@ -21,9 +21,10 @@ export const CATALOGO_PROCEDIMIENTOS = [
   { id: 17, nombre: 'Profilaxis Dental', categoria: 'Niño', precio: 100 },
   { id: 18, nombre: 'Destartraje con Ultrasonido', categoria: 'Niño', precio: 160 },
   { id: 19, nombre: 'Aplicación de Flúor', categoria: 'Niño', precio: 110 },
+  { id: 27, nombre: 'Sellante', categoria: 'Niño', precio: 60 },
   // ---------- DIENTE PERMANENTE ----------
-  { id: 20, nombre: 'Curación Simple', categoria: 'Permanente', precio: 120 },
-  { id: 21, nombre: 'Curación Compuesta', categoria: 'Permanente', precio: 160 },
+  { id: 20, nombre: 'Curación Simple', categoria: 'Permanente', precio: 100 },
+  { id: 21, nombre: 'Curación Compuesta', categoria: 'Permanente', precio: 120 },
   { id: 22, nombre: 'Curación Compleja', categoria: 'Permanente', precio: 280 },
   { id: 23, nombre: 'Reconstrucción Estética', categoria: 'Permanente', precio: 350 },
   { id: 24, nombre: 'Exodoncia Simple', categoria: 'Permanente', precio: 200 },

@@ -121,9 +121,9 @@ export default function ModalCita({ isOpen, onClose, onGuardar, datosIniciales, 
                 required
                 className="w-full bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg outline-none text-sm font-bold text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
               >
-                {['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'].map(h => (
-                  <option key={h} value={h}>{h}</option>
-                ))}
+                {['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'].map(h => (
+  <option key={h} value={h}>{h}</option>
+))}
               </select>
             </div>
           </div>
